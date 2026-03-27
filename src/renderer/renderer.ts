@@ -1,3 +1,7 @@
+const startupActionCardElement = document.getElementById("z_vault__startup_content_container") as HTMLDivElement;
+const startupGoogleSignInBtn = document.getElementById("z_vault__startup_button-google") as HTMLButtonElement;
+const localBackupSelectBtn = document.getElementById("z_vault__startup_button-local") as HTMLButtonElement;
+const startNewVaultBtn = document.getElementById("z_vault__startup_button-new") as HTMLButtonElement;
 const newMasterPasswordFormElement = document.getElementById("z_vault__new_master_password_form_section") as HTMLDivElement;
 const existingPasswordFormElement = document.getElementById("z_vault__existing_password_from_section") as HTMLDivElement;
 const existingMasterPasswordInput = document.getElementById("z_vault__user_master_password_input") as HTMLInputElement;
@@ -49,16 +53,36 @@ const paginationDiv = document.getElementById('pagination') as HTMLDivElement;
 const sidebarMenuItems = document.querySelectorAll(".z_vault__sidebar_menu_item") as NodeListOf<HTMLSpanElement>;
 const settingsPanelModalBackdropElement = document.getElementById("z_vault__settings_panel_modalBackdrop") as HTMLDivElement;
 const settingsPanelModal = document.getElementById("z_vault__settings_panelModal") as HTMLDivElement;
+const startupCloudBackupOverlayElement = document.getElementById("z_vault__startup_cloud_backup_overlay") as HTMLDivElement;
 const sidebarMenuBottomItemSettings = document.getElementById("z_vault__sidebar_menu_bottom_item_settings") as HTMLDivElement;
 const settingsPanelModalCloseBtn = document.getElementById("z_vault__settings_panelModalCloseBtn") as HTMLDivElement;
 const settingsPanelSidebarItemElement = document.querySelectorAll('.z_vault__settings_panel_sidebar-item') as NodeListOf<HTMLDivElement>;
 const settingsPanelGoogleDriveBackupBtn = document.getElementById("z_vault__settings_google_drive_btn") as HTMLButtonElement;
+const dataSyncModalElement = document.getElementById("z_vault__data_sync__modalOverlay") as HTMLDivElement;
+const vaultExistWarningOverlay = document.getElementById("z_vault__warning_overlay") as HTMLDivElement;
+const dataSyncModalError = document.getElementById("z_vault__data_sync__error") as HTMLDivElement;
+const dataSyncModalPasswordInput = document.getElementById("z_vault__data_sync__password") as HTMLInputElement;
+const dataSyncPasswordCancelBtn = document.getElementById("z_vault__data_sync__cancel") as HTMLButtonElement;
+const dataSyncPasswordSubmitBtn = document.getElementById("z_vault__data_sync__submit") as HTMLButtonElement;
+const settingsPanelDataImportBtn = document.getElementById("z_vault__settings_panel_import_btn") as HTMLButtonElement;
+const settingsPanelDataExportBtn = document.getElementById("z_vault__settings_panel_export_btn") as HTMLButtonElement;
+const cloudBackupInitialViewElement = document.getElementById("z_vault__startup_cloud_backup_initial_view") as HTMLDivElement;
+const cloudBackupImportBtn = document.getElementById("z_vault__startup_cloud_backup_button_import") as HTMLButtonElement;
+const cloudBackupSkipBtn = document.getElementById("z_vault__startup_cloud_backup_button_skip") as HTMLButtonElement;
+const cloudBackupListViewElement = document.getElementById("z_vault__startup_cloudbackup__backups_view") as HTMLDivElement;
+const cloudBackupBackBtn = document.getElementById("z_vault__startup_cloudbackup__backups-back_btn") as HTMLButtonElement;
+const cloudBackupListElement = document.getElementById("z_vault__startup_cloudbackup__backups_list") as HTMLDivElement;
+const cloudBackupRestoreSkipBtn = document.getElementById("z_vault__startup_cloudbackup__button_skip") as HTMLButtonElement;
+const cloudBackupRestoreBtn = document.getElementById("z_vault__startup_cloudbackup__button_import") as HTMLButtonElement;
 
 let pageSize = 10;
 let currentPageNum = 1;
 let modifyingStatus: "creating" | "updating" = "creating";
 let currentUpdatingData: PasswordDetails | TextDetails | null = null;
 let currentActiveDataType: DataType = "password";
+let cloudBackVaultList: GoogleDriveFileList = [];
+let selectedBackupId: string = "";
+let selectedBackupName: string = "";
 
 const validateMasterPassword = (password: string): boolean => {
     let isPasswordValid = true;
@@ -141,14 +165,29 @@ const validatePasswordDetails = (fromData: NewPassword) => {
         { cond: url.length > 0, el: passwordFormUrlInput },
         { cond: note.length > 0, el: passwordFormNoteInput },
     ];
-    rules.forEach(({ cond, el }) => {
+    for (let index = 0; index < rules.length; index++) {
+        let cond = rules[index].cond;
+        let el = rules[index].el;
         if (!cond) {
             el.style.borderColor = "rgb(248, 113, 113)";
+            el.focus();
+            el.scrollIntoView({ behavior: "smooth" });
             isFormValid = false;
+            break;
         } else {
             el.style.borderColor = "rgb(28, 212, 83)";
         }
-    });
+    }
+    // rules.forEach(({ cond, el }) => {
+    //     if (!cond) {
+    //         el.style.borderColor = "rgb(248, 113, 113)";
+    //         el.focus();
+    //         el.scrollIntoView({ behavior: "smooth" });
+    //         isFormValid = false;
+    //     } else {
+    //         el.style.borderColor = "rgb(28, 212, 83)";
+    //     }
+    // });
     return isFormValid;
 }
 
@@ -286,6 +325,13 @@ const addFavorite = (passwordId: string) => {
 }
 
 const editPassword = (password: PasswordDetails) => {
+    resetInputElements([passwordFormServiceInput,
+        passwordFormNameOrEmailInput,
+        passwordFormPasswordInput,
+        passwordFormCategorySelect,
+        passwordFormUrlInput,
+        passwordFormNoteInput
+    ]);
     passwordFormServiceInput.value = password.title;
     passwordFormNameOrEmailInput.value = password.usernameOrEmail ?? "";
     passwordFormPasswordInput.value = password.password ?? "";
@@ -305,6 +351,12 @@ const deleteData = async (passwordId: string) => {
 async function getSensitiveData(id: string) {
     const decryptedData = await window.electronAPI.decryptSensitiveData(id, currentActiveDataType);
     return JSON.parse(decryptedData);
+}
+
+function resetInputElements(inputElements: (HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement)[]) {
+    inputElements.forEach(element => {
+        element.value = "";
+    });
 }
 
 function changeShowHideBtnState(
@@ -577,7 +629,8 @@ const renderPasswords = (passwords: PasswordDetails[]) => {
                 }
             });
             passwordEditBtn?.addEventListener("click", async () => {
-                addModalBackdrop.style.display = "block";
+                addModalBackdrop.classList.add("z_vault__open");
+                addModal.classList.add("z_vault__open");
                 sensitiveData = sensitiveData ?? await getSensitiveData(password.id);
                 currentActiveDataType = "password";
                 password.usernameOrEmail = sensitiveData?.usernameOrEmail ?? "";
@@ -833,17 +886,173 @@ ${previewDots}</pre>
 (async () => {
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     const delayTime = 500;
+    let syncAndBackupClickedBtn: "sync" | "import" | "export" = "sync";
 
     const isVaultFileExist = await window.electronAPI.vaultExistStatus();
-    console.log({ isVaultFileExist });
     if (isVaultFileExist) {
-        existingPasswordFormElement.style.display = "block"
-        existingPasswordFormElement.classList.add("animate__bounceInRight");
+        startupActionCardElement.style.display = "none";
+        newMasterPasswordFormElement.style.display = "none";
+        existingPasswordFormElement.style.display = "block";
     } else {
-        newMasterPasswordFormElement.style.display = "block";
-        newMasterPasswordFormElement.classList.add("animate__bounceInRight");
+        startupActionCardElement.style.display = "block";
+        newMasterPasswordFormElement.style.display = "none";
+        existingPasswordFormElement.style.display = "none";
     }
 
+    startupGoogleSignInBtn.addEventListener("click", async () => {
+        const existingBackupResponse = await window.electronAPI.checkExistingBackup();
+        if (existingBackupResponse.isBackupPresent) {
+            cloudBackVaultList = existingBackupResponse.data;
+            startupActionCardElement.style.display = "none";
+            newMasterPasswordFormElement.style.display = "none";
+            existingPasswordFormElement.style.display = "none";
+            startupCloudBackupOverlayElement.style.display = "flex";
+        } else {
+            startupActionCardElement.style.display = "none";
+            newMasterPasswordFormElement.style.display = "block";
+            existingPasswordFormElement.style.display = "none";
+        }
+    });
+
+    function getDaysAgo(date: string) {
+        const now = new Date();
+        const past = new Date(date)
+        const diffTime = Math.abs(now.getTime() - past.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays;
+    }
+
+    function getStatusBadge(daysAgo: number) {
+        if (daysAgo <= 7) {
+            return { label: `${daysAgo} days ago`, class: 'recent' };
+        } else if (daysAgo <= 30) {
+            return { label: `${daysAgo} days ago`, class: 'moderate' };
+        } else {
+            return { label: `${daysAgo} days ago`, class: 'old' };
+        }
+    }
+
+    function getFileSize(size: string) {
+        const sizeInNumber = parseInt(size);
+        if (sizeInNumber <= 0) {
+            return "0 KB"
+        }
+        let sizeInKB = Number((sizeInNumber / 1024).toFixed(1));
+        let sizeInMB = Number((sizeInKB / 1024).toFixed(1));
+        let sizeInGB = Number((sizeInMB / 1024).toFixed(1));
+        return sizeInGB ? sizeInGB + " GB" : sizeInMB ? sizeInMB + " MB" : sizeInKB ? sizeInKB + " KB" : "0 KB";
+    }
+
+    function selectBackup(backupId: string, backupName: string, element: HTMLDivElement) {
+        console.log('selectBackup called with ID:', backupId);
+        document.querySelectorAll('.z_vault__startup_cloudbackup__backup-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+
+        element.classList.add('selected');
+        selectedBackupId = backupId;
+        selectedBackupName = backupName;
+        cloudBackupRestoreBtn.disabled = false;
+    }
+
+    function renderBackups(backupData: GoogleDriveFileList) {
+        cloudBackupListElement.innerHTML = '';
+
+        backupData.forEach(backup => {
+            const daysAgo = getDaysAgo(backup.createdTime!);
+            const status = getStatusBadge(daysAgo);
+            const fileSize = getFileSize(backup.size!);
+
+            const backupItem = document.createElement('div');
+            backupItem.className = 'z_vault__startup_cloudbackup__backup-item';
+            backupItem.dataset.backupId = backup.id!;
+
+            backupItem.innerHTML = `
+                    <div class="z_vault__startup_cloudbackup__backup-icon">💾</div>
+                    <div class="z_vault__startup_cloudbackup__backup-info">
+                        <div class="z_vault__startup_cloudbackup__backup-name">${backup.name}</div>
+                        <div class="z_vault__startup_cloudbackup__backup-date">${fileSize}</div>
+                    </div>
+                    <div class="z_vault__startup_cloudbackup__backup-status">
+                        <span class="z_vault__startup_cloudbackup__backup-status-badge ${status.class}">${status.label}</span>
+                    </div>
+                    <div class="z_vault__startup_cloudbackup__backup-checkbox"></div>
+                `;
+            backupItem.addEventListener("click", () => {
+                selectBackup(backup.id!, backup.name!, backupItem);
+            });
+            cloudBackupListElement.appendChild(backupItem);
+        });
+    }
+
+    cloudBackupSkipBtn.addEventListener("click", () => {
+        
+    })
+
+    cloudBackupImportBtn.addEventListener("click", () => {
+        cloudBackupInitialViewElement.classList.add("hidden");
+        cloudBackupListViewElement.classList.add("active");
+        renderBackups(cloudBackVaultList);
+    });
+
+    cloudBackupBackBtn.addEventListener("click", () => {
+        cloudBackupInitialViewElement.classList.remove("hidden");
+        cloudBackupListViewElement.classList.remove("active");
+    });
+
+    cloudBackupRestoreSkipBtn.addEventListener("click", () => {
+        cloudBackupInitialViewElement.classList.remove("hidden");
+        cloudBackupListViewElement.classList.remove("active");
+    });
+
+    cloudBackupRestoreBtn.addEventListener("click", async () => {
+        const openCloudBackupResponse = await window.electronAPI.openCloudBackup(selectedBackupId, selectedBackupName);
+        console.log(openCloudBackupResponse);
+        if (openCloudBackupResponse.success) {
+            startupCloudBackupOverlayElement.style.display = "none";
+            cloudBackupInitialViewElement.classList.add("hidden");
+            cloudBackupListViewElement.classList.add("hidden");
+            startupActionCardElement.style.display = "none";
+            newMasterPasswordFormElement.style.display = "none";
+            existingPasswordFormElement.style.display = "block";
+        } else {
+            startupCloudBackupOverlayElement.style.display = "none";
+            cloudBackupInitialViewElement.classList.add("hidden");
+            cloudBackupListViewElement.classList.add("hidden");
+            startupActionCardElement.style.display = "block";
+            newMasterPasswordFormElement.style.display = "none";
+            existingPasswordFormElement.style.display = "none";
+        }
+    })
+
+    localBackupSelectBtn.addEventListener("click", async () => {
+        const localBackupResponse = await window.electronAPI.openLocalBackup();
+        if (localBackupResponse.success) {
+            startupActionCardElement.style.display = "none";
+            newMasterPasswordFormElement.style.display = "none";
+            existingPasswordFormElement.style.display = "block";
+        } else {
+            startupActionCardElement.style.display = "block";
+            newMasterPasswordFormElement.style.display = "none";
+            existingPasswordFormElement.style.display = "none";
+        }
+    });
+
+    startNewVaultBtn.addEventListener("click", async () => {
+        startupActionCardElement.style.display = "none";
+        newMasterPasswordFormElement.style.display = "block";
+        existingPasswordFormElement.style.display = "none";
+    });
+    // const isVaultFileExist = await window.electronAPI.vaultExistStatus();
+    // console.log({ isVaultFileExist });
+    // if (isVaultFileExist) {
+    //     existingPasswordFormElement.style.display = "block"
+    //     existingPasswordFormElement.classList.add("animate__bounceInRight");
+    // } else {
+    //     newMasterPasswordFormElement.style.display = "block";
+    //     newMasterPasswordFormElement.classList.add("animate__bounceInRight");
+    // }
+    // ===================
     // newVaultCreationBtn.addEventListener("click", () => {
     //   existingPasswordFormElement.classList.remove("animate__bounceInRight")
     //   existingPasswordFormElement.classList.add("animate__fadeOutLeft");
@@ -955,6 +1164,16 @@ ${previewDots}</pre>
     });
 
     addDataBtn.addEventListener("click", () => {
+        resetInputElements([passwordFormServiceInput,
+            passwordFormNameOrEmailInput,
+            passwordFormPasswordInput,
+            passwordFormCategorySelect,
+            passwordFormUrlInput,
+            passwordFormNoteInput,
+            textFormTitleInput,
+            textFormCategorySelect,
+            textFormNoteTextarea,
+        ]);
         addModalBackdrop.classList.add('z_vault__open');
         addModal.classList.add('z_vault__open');
         modifyingStatus = "creating";
@@ -984,6 +1203,8 @@ ${previewDots}</pre>
                 note,
                 type: "password"
             }
+            console.log(passwordDetails);
+
             const isValidDetails = validatePasswordDetails(passwordDetails);
             if (!isValidDetails) {
                 throw new Error("Need to show error at- popUpFromSaveBtn");
@@ -1090,9 +1311,85 @@ ${previewDots}</pre>
     });
 
     settingsPanelGoogleDriveBackupBtn.addEventListener("click", async () => {
-        const clientId = await window.electronAPI.connectToCloud("googleDrive");
-        console.log(clientId);
+        // dataSyncPasswordSubmitBtn.innerText = "Sync";
+        // syncAndBackupClickedBtn = "sync";
+        settingsPanelGoogleDriveBackupBtn.disabled = true;
+        const backupResponse = await window.electronAPI.backupToDrive();
+        settingsPanelGoogleDriveBackupBtn.disabled = false;
+        console.log(backupResponse);
+        if (backupResponse.success) {
+        } else {
+
+        }
+        // dataSyncModalElement.classList.add("active");
+        // dataSyncModalPasswordInput.focus();
     });
+
+    settingsPanelDataExportBtn.addEventListener("click", async () => {
+        const exportResponse = await window.electronAPI.exportVault();
+        console.log(exportResponse);
+    })
+
+    const handelDataSyncError = (message: string) => {
+        dataSyncModalError.textContent = message;
+        dataSyncModalError.classList.add("visible");
+        dataSyncModalPasswordInput.classList.add("z_vault__data_sync__shake");
+        dataSyncModalPasswordInput.focus();
+        dataSyncModalPasswordInput.select();
+        setTimeout(() => {
+            dataSyncModalPasswordInput.classList.remove("z_vault__data_sync__shake");
+        }, 500);
+    }
+
+    // const onSyncData = async (passwordValue: string) => {
+    //     const connectionResponse = await window.electronAPI.connectToCloud("googleDrive", passwordValue);
+    //     console.log(connectionResponse);
+
+    //     if (connectionResponse.success) {
+    //         dataSyncModalElement.classList.remove("active");
+    //         // settingsPanelGoogleDriveBackupBtn.setAttribute("disabled", "");
+    //         settingsPanelGoogleDriveBackupBtn.disabled = true;
+    //         settingsPanelGoogleDriveBackupBtn.classList.remove("z_vault__settings_panel_btn-primary");
+    //         settingsPanelGoogleDriveBackupBtn.textContent = "Sync Successful"
+    //     }
+    // }
+
+    const onImportBackup = async (passwordValue: string) => {
+        const importBackupResponse = await window.electronAPI.importBackup(passwordValue);
+        console.log(importBackupResponse);
+
+    }
+
+
+    // dataSyncPasswordSubmitBtn.addEventListener("click", async () => {
+    //     const passwordValue = dataSyncModalPasswordInput.value.trim();
+    //     if (!passwordValue) {
+    //         handelDataSyncError("Master password is required");
+    //     }
+    //     switch (syncAndBackupClickedBtn) {
+    //         case "sync":
+    //             await onSyncData(passwordValue);
+    //             break;
+    //         case "import":
+    //             await onImportBackup(passwordValue);
+    //             break;
+    //         case "export":
+    //             break;
+    //         default:
+    //             break;
+    //     }
+    // });
+
+    dataSyncPasswordCancelBtn.addEventListener("click", () => {
+        dataSyncModalElement.classList.remove("active");
+    });
+
+    // settingsPanelDataImportBtn.addEventListener("click", () => {
+    //     dataSyncPasswordSubmitBtn.innerText = "Import";
+    //     syncAndBackupClickedBtn = "import";
+    //     dataSyncModalElement.classList.add("active");
+    //     dataSyncModalPasswordInput.focus();
+    // });
 
     passwordFormTabGroupBtn.forEach(tabBtn => {
         tabBtn.addEventListener("click", () => {
@@ -1109,5 +1406,5 @@ ${previewDots}</pre>
             };
         })
     });
-    
+
 })();

@@ -17,25 +17,76 @@
             <!--master password input ui-->
             <div class="z_vault__startup" id="z_vault__auth_form">
                 <div class="z_vault__startup_content">
-                    <div class="z_vault__startup_content_header">
-                        <div class="z_vault__startup_content_header_logo">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round" style="width: 2rem; height: 2rem">
-                                <path
-                                    d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z">
-                                </path>
-                            </svg>
+                    <!-- Startup container -->
+                    <div id="z_vault__startup_content_container">
+                        <!-- Header -->
+                        <div class="z_vault__startup_header">
+                            <div class="z_vault__startup_logo-wrapper">
+                                <div class="z_vault__startup_logo">🔐</div>
+                            </div>
+                            <h1 class="z_vault__startup_title">Z Vault</h1>
+                            <p class="z_vault__startup_subtitle">Your secure password manager</p>
+                            <p class="z_vault__startup_description">Choose how you'd like to get started</p>
                         </div>
-                        <h1 class="z_vault__startup_content_header_title">Z Vault</h1>
-                        <p class="z_vault__startup_content_header_text">
-                            Your Private & Secure Vault
-                        </p>
+                        <!-- Action Buttons -->
+                        <div class="z_vault__startup_actions">
+                            <!-- Google Sign In -->
+                            <button class="z_vault__startup_button" id="z_vault__startup_button-google">
+                                <span>
+                                    <span class="z_vault__startup_google-logo">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                            xmlns="http://www.w3.org/2000/svg">
+                                            <path
+                                                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                                                fill="#4285F4" />
+                                            <path
+                                                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                                                fill="#34A853" />
+                                            <path
+                                                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                                                fill="#FBBC05" />
+                                            <path
+                                                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                                                fill="#EA4335" />
+                                        </svg>
+                                    </span>
+                                    <span>Sign in to use cloud backup file</span>
+                                </span>
+                            </button>
+
+                            <!-- Local Backup -->
+                            <button class="z_vault__startup_button" id="z_vault__startup_button-local">
+                                <span>
+                                    <span class="z_vault__startup_icon">💾</span>
+                                    <span>I have local backup file</span>
+                                </span>
+                            </button>
+
+                            <!-- Start New -->
+                            <button class="z_vault__startup_button" id="z_vault__startup_button-new">
+                                <span>
+                                    <span class="z_vault__startup_icon">✨</span>
+                                    <span>Open new vault</span>
+                                </span>
+                            </button>
+                        </div>
+                        <!-- Footer -->
+                        <div class="z_vault__startup_footer">
+                            <p class="z_vault__startup_footer-text">
+                                By continuing, you agree to our
+                                <span class="z_vault__startup_footer-link" onclick="handleTerms()">Terms of
+                                    Service</span>
+                                and
+                                <span class="z_vault__startup_footer-link" onclick="handlePrivacy()">Privacy
+                                    Policy</span>
+                            </p>
+                        </div>
                     </div>
+                    <!--need to implement password validation status message-->
                     <div class="z_vault__startup_password_validation_message" style="display: none;">
-                        <!--need to implement password validation status message-->
                         <div class="z_vault__startup_password_validation_text"></div>
                     </div>
+                    <!-- Startup new vault creation form -->
                     <div class="z_vault__create_master_password_form_section"
                         id="z_vault__new_master_password_form_section">
                         <div class="z_vault__create_master_password_form_header">
@@ -153,6 +204,7 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Startup existing vault access form -->
                     <div class="z_vault__master_password_form_section animate__bounceInRight"
                         id="z_vault__existing_password_from_section">
                         <div class="z_vault__master_password_form_header">
@@ -232,6 +284,7 @@
                     </div>
                 </div>
             </div>
+            <!-- main content -->
             <div class="z_vault__sidebar_wrapper" id="z_vault__vault_content" style="display: none">
                 <div class="z_vault__sidebar_flex">
                     <div class="z_vault__sidebar">
@@ -406,7 +459,9 @@
                                     <!-- Password List -->
                                     <div id="z_vault__main_password_list"></div>
                                     <div id="z_vault__no_data_found_section"></div>
-                                    <div class="pagination" id="pagination"></div>
+                                    <div class="z_vault__pagination_container">
+                                        <div class="pagination" id="pagination"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -434,13 +489,25 @@
             <div class="z_vault__password_form_container">
                 <div class="z_vault__password_form_tab_group">
                     <button class="z_vault__password_form_tab_group_btn" data-state="active" data-type="password">
-                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M80-200v-80h800v80H80Zm46-242-52-30 34-60H40v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Zm320 0-52-30 34-60h-68v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Zm320 0-52-30 34-60h-68v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Z"/></svg>Password
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                            fill="currentColor">
+                            <path
+                                d="M80-200v-80h800v80H80Zm46-242-52-30 34-60H40v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Zm320 0-52-30 34-60h-68v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Zm320 0-52-30 34-60h-68v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Z" />
+                        </svg>Password
                     </button>
                     <button class="z_vault__password_form_tab_group_btn" data-type="text">
-                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M200-200h560v-367L567-760H200v560Zm0 80q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h400l240 240v400q0 33-23.5 56.5T760-120H200Zm80-160h400v-80H280v80Zm0-160h400v-80H280v80Zm0-160h280v-80H280v80Zm-80 400v-560 560Z"/></svg>Text
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                            fill="currentColor">
+                            <path
+                                d="M200-200h560v-367L567-760H200v560Zm0 80q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h400l240 240v400q0 33-23.5 56.5T760-120H200Zm80-160h400v-80H280v80Zm0-160h400v-80H280v80Zm0-160h280v-80H280v80Zm-80 400v-560 560Z" />
+                        </svg>Text
                     </button>
                     <button class="z_vault__password_form_tab_group_btn" data-type="generate">
-                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M440-320h80v-120h120v-80H520v-120h-80v120H320v80h120v120Zm40 240q-16 0-30.5-5.5T424-103L105-423q-11-12-18-26.5T80-480q0-16 7-30.5t18-25.5l319-320q12-12 26-18t30-6q16 0 31 6t26 18l318 320q11 12 18 26t7 30q0 16-6.5 30.5T855-423L537-103q-11 11-26 17t-31 6Zm0-80 319-320-319-320-319 320 319 320Zm0-320Z"/></svg>Generator
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                            fill="currentColor">
+                            <path
+                                d="M440-320h80v-120h120v-80H520v-120h-80v120H320v80h120v120Zm40 240q-16 0-30.5-5.5T424-103L105-423q-11-12-18-26.5T80-480q0-16 7-30.5t18-25.5l319-320q12-12 26-18t30-6q16 0 31 6t26 18l318 320q11 12 18 26t7 30q0 16-6.5 30.5T855-423L537-103q-11 11-26 17t-31 6Zm0-80 319-320-319-320-319 320 319 320Zm0-320Z" />
+                        </svg>Generator
                     </button>
                 </div>
 
@@ -483,7 +550,11 @@
                             <input type="text" id="z_vault__password_form_password_input" class="z_vault__input"
                                 placeholder="Enter or generate password" />
                             <button class="z_vault__password_copy_btn">
-                                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960"
+                                    width="24px" fill="currentColor">
+                                    <path
+                                        d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z" />
+                                </svg>
                             </button>
                         </div>
                     </div>
@@ -590,7 +661,7 @@
                             <path
                                 d="M253.33-160q-87.66 0-150.5-62.33Q40-284.67 40-372.33q0-78 48.67-138 48.66-60 126-73.67 21.66-95.33 96-155.33 74.33-60 170.66-60 114.34 0 192.5 81.5Q752-636.33 752-521.33v16q71 1.33 119.5 50.83T920-332.67q0 71-50.83 121.84Q818.33-160 747.33-160h-234q-27 0-46.83-19.83-19.83-19.84-19.83-46.84v-240.66l-76.67 76-47.33-47.34L480-596l157.33 157.33L590-391.33l-76.67-76v240.66h234q44 0 75-31t31-75q0-44-31-75t-75-31h-62v-82.66q0-87-59.83-149.17-59.83-62.17-146.83-62.17-87 0-147.17 62.17-60.17 62.17-60.17 149.17H252q-60.67 0-103 42.66Q106.67-436 106.67-374q0 60.67 42.95 104t103.71 43.33H380V-160H253.33ZM480-446.67Z" />
                         </svg>
-                        <span>Backup & Restore</span>
+                        <span>Backup</span>
                     </div>
                     <div data-section="appearance" class="z_vault__settings_panel_sidebar-item">
                         <svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px"
@@ -731,7 +802,7 @@
 
                     <!-- Backup & Restore -->
                     <section id="backup" class="z_vault__settings_panel_section">
-                        <h3>Backup & Restore</h3>
+                        <h3>Backup</h3>
                         <div class="z_vault__settings_panel_card" style="--i: 1;">
                             <div style="display: flex; align-items: start; gap: 2.5rem;">
                                 <i class="fas fa-shield-check" style="font-size: 4rem; color: #818cf8;"></i>
@@ -746,7 +817,7 @@
                             </div>
                         </div>
 
-                        <h4 style="font-size: 2.2rem; margin: 4rem 0 2.5rem;">Cloud Providers</h4>
+                        <h4 style="font-size: 2.2rem; margin: 4rem 0 2.5rem;">Cloud Backup</h4>
                         <div class="z_vault__settings_panel_grid">
                             <div class="z_vault__settings_panel_card z_vault__settings_panel_provider-card"
                                 style="--i: 2;">
@@ -755,11 +826,12 @@
                                     <img src="./assets/images/drive_logo.png" alt="Google Drive" style="width: 78px;" />
                                 </div>
                                 <h5 style="font-size: 1.7rem; margin-bottom: 1rem;">Google Drive</h5>
-                                <p style="margin-bottom: 2rem; color: var(--z-vault-text-muted);">Unlimited • Instant
-                                    sync
+                                <p style="margin-bottom: 2rem; color: var(--z-vault-text-muted);">Secure • Instant
+                                    Backup
                                 </p>
-                                <button id="z_vault__settings_google_drive_btn" class="z_vault__settings_panel_btn z_vault__settings_panel_btn-primary">Connect
-                                    Google Drive</button>
+                                <button id="z_vault__settings_google_drive_btn"
+                                    class="z_vault__settings_panel_btn z_vault__settings_panel_btn-primary">Start
+                                    Backup</button>
                             </div>
                             <div class="z_vault__settings_panel_card z_vault__settings_panel_provider-card"
                                 style="--i: 3;">
@@ -772,8 +844,7 @@
                                 <button class="z_vault__settings_panel_btn"
                                     style="background:#374151;color:#94a3b8;cursor:not-allowed;">Coming Soon</button>
                             </div>
-                            <div class="z_vault__settings_panel_card z_vault__settings_panel_provider-card"
-                                style="--i: 4;">
+                            <div class="z_vault__settings_panel_card z_vault__settings_panel_provider-card">
                                 <div
                                     style="width: 110px; height: 110px; background: rgba(255,255,255,0.06); border-radius: 24px; margin: 0 auto 2.5rem; display: flex; align-items: center; justify-content: center;">
                                     <img src="./assets/images/dropbox.png" alt="Google Drive" style="width: 78px;" />
@@ -787,30 +858,47 @@
 
                         <h4 style="font-size: 2.2rem; margin: 4rem 0 2.5rem;">Local Backup</h4>
                         <div class="z_vault__settings_panel_grid">
-                            <div class="z_vault__settings_panel_card" style="--i: 5;">
+                            <div class="z_vault__settings_panel_card">
                                 <div
-                                    style="display: flex; align-items: center; justify-content: center; margin-bottom: 2.5rem;">
-                                    <i class="fas fa-download"
-                                        style="font-size: 4rem; color: var(--z-vault-success);"></i>
+                                    style="display: flex; align-items: center; justify-content: center; margin-bottom: 2.5rem; gap: 5px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                        style="font-size: 4rem; color: var(--z-vault-success);" height="40px"
+                                        viewBox="0 -960 960 960" width="40px" fill="currentcolor">
+                                        <path
+                                            d="M440-160v-326L336-382l-56-58 200-200 200 200-56 58-104-104v326h-80ZM160-600v-120q0-33 23.5-56.5T240-800h480q33 0 56.5 23.5T800-720v120h-80v-120H240v120h-80Z" />
+                                    </svg>
                                     <div>
                                         <h5 style="font-size: 2rem;">Export Vault</h5>
                                         <p style="color: var(--z-vault-text-muted);">Encrypted offline backup</p>
                                     </div>
                                 </div>
-                                <button class="z_vault__settings_panel_btn z_vault__settings_panel_btn-success">Export
-                                    Encrypted Backup</button>
-                            </div>
-                            <div class="z_vault__settings_panel_card" style="--i: 6;">
                                 <div
                                     style="display: flex; align-items: center; justify-content: center; margin-bottom: 2.5rem;">
-                                    <i class="fas fa-upload" style="font-size: 4rem; color: var(--z-vault-accent);"></i>
+                                    <button class="z_vault__settings_panel_btn z_vault__settings_panel_btn-success"
+                                        id="z_vault__settings_panel_export_btn">Export Vault</button>
+                                </div>
+                            </div>
+                            <div class="z_vault__settings_panel_card">
+
+                                <div
+                                    style="display: flex; align-items: center; justify-content: center; margin-bottom: 2.5rem; gap: 5px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                        style="font-size: 4rem; color: var(--z-vault-accent);" height="40px"
+                                        viewBox="0 -960 960 960" width="40px" fill="currentcolor">
+                                        <path
+                                            d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z" />
+                                    </svg>
                                     <div>
                                         <h5 style="font-size: 2rem;">Import Vault</h5>
                                         <p style="color: var(--z-vault-text-muted);">Restore from file</p>
                                     </div>
                                 </div>
-                                <button class="z_vault__settings_panel_btn z_vault__settings_panel_btn-primary">Choose
-                                    Backup File</button>
+                                <div
+                                    style="display: flex; align-items: center; justify-content: center; margin-bottom: 2.5rem;">
+                                    <button class="z_vault__settings_panel_btn z_vault__settings_panel_btn-primary"
+                                        id="z_vault__settings_panel_import_btn">Choose
+                                        Backup File</button>
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -957,6 +1045,119 @@
                     </section>
 
                 </main>
+            </div>
+        </div>
+    </div>
+    <!-- cloud backup found modal -->
+    <div id="z_vault__startup_cloud_backup_overlay">
+        <div class="z_vault__startup_cloud_backup_modal">
+            <div class="z_vault__startup_cloud_backup_card">
+                <!-- Initial cloud backup View -->
+                <div id="z_vault__startup_cloud_backup_initial_view">
+                    <div class="z_vault__startup_cloud_backup_icon-wrapper">
+                        <div class="z_vault__startup_cloud_backup_icon">☁️</div>
+                    </div>
+
+                    <h2 class="z_vault__startup_cloud_backup_title">Backup Found</h2>
+                    <p class="z_vault__startup_cloud_backup_message">
+                        We found old backup in your cloud drive do you want to use it?
+                    </p>
+
+                    <div class="z_vault__startup_cloud_backup_actions">
+                        <button class="z_vault__startup_cloud_backup_button"
+                            id="z_vault__startup_cloud_backup_button_skip" onclick="showWarning()">
+                            <span>
+                                <span>✕</span>
+                                <span>Skip</span>
+                            </span>
+                        </button>
+                        <button class="z_vault__startup_cloud_backup_button"
+                            id="z_vault__startup_cloud_backup_button_import">
+                            <span>
+                                <span>✓</span>
+                                <span>Yes</span>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+                <!-- Backups List View -->
+                <div id="z_vault__startup_cloudbackup__backups_view">
+                    <div class="z_vault__startup_cloudbackup__backups-header">
+                        <button id="z_vault__startup_cloudbackup__backups-back_btn">
+                            ←
+                        </button>
+                        <h2 class="z_vault__startup_cloudbackup__backups-title">Select Backup</h2>
+                    </div>
+
+                    <div id="z_vault__startup_cloudbackup__backups_list"></div>
+
+                    <div class="z_vault__startup_cloudbackup__backups-footer">
+                        <button class="z_vault__startup_cloudbackup__button"
+                            id="z_vault__startup_cloudbackup__button_skip">
+                            <span>
+                                <span>✕</span>
+                                <span>Cancel</span>
+                            </span>
+                        </button>
+                        <button class="z_vault__startup_cloudbackup__button"
+                            id="z_vault__startup_cloudbackup__button_import" disabled>
+                            <span>
+                                <span>✓</span>
+                                <span>Restore</span>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+                <!-- Warning Modal -->
+            </div>
+        </div>
+    </div>
+    <!-- Warning Modal Overlay -->
+    <div id="z_vault__warning_overlay">
+        <div class="z_vault__warning_modal">
+            <div class="z_vault__warning_icon">⚠️</div>
+
+            <h2 class="z_vault__warning_title">Vault Already Exists</h2>
+            <p class="z_vault__warning_message">
+                A vault file already exists on this device. Starting a new vault will <span
+                    class="z_vault__warning_highlight">permanently delete</span> your existing vault and all its data.
+                This action cannot be undone.
+            </p>
+
+            <div class="z_vault__warning_actions">
+                <button class="z_vault__warning_button z_vault__warning_button-cancel" onclick="cancelNewVault()">
+                    <span>
+                        <span>✕</span>
+                        <span>Cancel</span>
+                    </span>
+                </button>
+                <button class="z_vault__warning_button z_vault__warning_button-confirm" onclick="confirmNewVault()">
+                    <span>
+                        <span>⚡</span>
+                        <span>Start New</span>
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- data sync master password prompt -->
+    <div class="z_vault__data_sync__modal_overlay" id="z_vault__data_sync__modalOverlay">
+        <div class="z_vault__data_sync__modal">
+            <h2>Enter Master Password</h2>
+            <p class="z_vault__data_sync__subtitle">
+                To securely sync your data, please enter your master password.
+            </p>
+
+            <div id="z_vault__data_sync__error" class="z_vault__data_sync__error"></div>
+
+            <input type="password" id="z_vault__data_sync__password" class="z_vault__data_sync__password-input"
+                placeholder="Master password" autocomplete="off" spellcheck="false" />
+
+            <div class="z_vault__data_sync__buttons">
+                <button id="z_vault__data_sync__cancel"
+                    class="z_vault__data_sync__btn z_vault__data_sync__cancel">Cancel</button>
+                <button id="z_vault__data_sync__submit"
+                    class="z_vault__data_sync__btn z_vault__data_sync__submit">Sync</button>
             </div>
         </div>
     </div>

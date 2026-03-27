@@ -1,23 +1,32 @@
+import { drive_v3 } from "@googleapis/drive/build/v3";
 import { contextBridge, ipcRenderer, IpcRendererEvent } from "electron/renderer";
 
 declare global {
   type DataType = "password" | "text";
   type DataTables = "accounts" | "texts";
   type CloudDrive = "googleDrive" | "oneDrive" | "dropBox";
+  type GoogleDriveFileList = drive_v3.Schema$File[];
   interface Window {
     electronAPI: {
       createNewVault: (password: string) => Promise<ResponsePayload>,
       vaultExistStatus: () => Promise<boolean>,
       unlockVault: (password: string) => Promise<ResponsePayload>,
       addNewData: (data: NewPassword | NewText, pageNum: number, pageSize: number) => Promise<ResponsePayload>,
-      deleteData: (id: string, type:DataType, pageNum: number, pageSize: number) => Promise<ResponsePayload>,
+      deleteData: (id: string, type: DataType, pageNum: number, pageSize: number) => Promise<ResponsePayload>,
       editData: (updatedData: PasswordDetails | TextDetails, pageNum: number, pageSize: number) => Promise<ResponsePayload>
       decryptSensitiveData: (id: string, type: DataType) => Promise<string>,
       fetchData: (type: DataType, pageNum: number, pageSize: number) => Promise<ResponsePayload>,
-      connectToCloud: (cloudDrive: CloudDrive) => Promise<any>,
+      connectToCloud: (cloudDrive: CloudDrive, masterPassword: string) => Promise<any>,
       cloudSyncPasswordError: (callback: (errMessage: string) => void) => Electron.IpcRenderer,
       cloudSyncPasswordSubmit: (password: string) => void,
       cloudSyncPasswordCancel: () => void,
+      importBackup: (masterPassword: string) => Promise<any>,
+      checkExistingBackup: () => Promise<{ isBackupPresent: boolean, data: drive_v3.Schema$File[], message: string }>,
+      checkTokenValidity: () => Promise<{ isTokenValid: boolean, message: string }>,
+      openLocalBackup: () => Promise<{ success: boolean, message: string }>,
+      exportVault: () => Promise<{ success: boolean, message: string }>,
+      backupToDrive: () => Promise<{ success: boolean, message: string }>,
+      openCloudBackup: (backupFileId: string, backupFileName: string) => Promise<{ success: boolean; message: string }>
     }
   }
 
@@ -75,12 +84,19 @@ contextBridge.exposeInMainWorld("electronAPI", {
     pageNum: number,
     pageSize: number
   ) => ipcRenderer.invoke("addNewData", data, pageNum, pageSize),
-  deleteData: (id: string, type:DataType, pageNum: number, pageSize: number) => ipcRenderer.invoke("deleteData", id, type, pageNum, pageSize),
+  deleteData: (id: string, type: DataType, pageNum: number, pageSize: number) => ipcRenderer.invoke("deleteData", id, type, pageNum, pageSize),
   editData: (updatedData: PasswordDetails | TextDetails, pageNum: number, pageSize: number) => ipcRenderer.invoke("editData", updatedData, pageNum, pageSize),
   decryptSensitiveData: (id: string, type: DataType) => ipcRenderer.invoke("decryptSensitiveData", id, type),
   fetchData: (type: DataType, pageNum: number, pageSize: number) => ipcRenderer.invoke("fetchData", type, pageNum, pageSize),
-  connectToCloud: (cloudDrive:CloudDrive) => ipcRenderer.invoke("connectToCloud", cloudDrive),
-  cloudSyncPasswordError: (callback: (errMessage:string) => void) => ipcRenderer.on("cloudSyncPasswordError", (_event: IpcRendererEvent, errorMsg: string) => callback(errorMsg)),
+  connectToCloud: (cloudDrive: CloudDrive, masterPassword: string) => ipcRenderer.invoke("connectToCloud", cloudDrive, masterPassword),
+  cloudSyncPasswordError: (callback: (errMessage: string) => void) => ipcRenderer.on("cloudSyncPasswordError", (_event: IpcRendererEvent, errorMsg: string) => callback(errorMsg)),
   cloudSyncPasswordSubmit: (password: string) => ipcRenderer.send("cloudSyncPasswordSubmit", password),
   cloudSyncPasswordCancel: () => ipcRenderer.send("cloudSyncPasswordCancel"),
+  importBackup: (masterPassword: string) => ipcRenderer.invoke("importBackup", masterPassword),
+  checkExistingBackup: () => ipcRenderer.invoke("checkExistingBackup"),
+  checkTokenValidity: () => ipcRenderer.invoke("checkTokenValidity"),
+  openLocalBackup: () => ipcRenderer.invoke("openLocalBackup"),
+  exportVault: () => ipcRenderer.invoke("exportVault"),
+  backupToDrive: () => ipcRenderer.invoke("backupToDrive"),
+  openCloudBackup: (backupFileId: string, backupFileName: string): Promise<{ success: boolean, message: string }> => ipcRenderer.invoke("openCloudBackup", backupFileId, backupFileName),
 });

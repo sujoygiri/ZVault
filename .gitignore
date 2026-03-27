@@ -16,6 +16,7 @@ release/
 # Environment variables
 .env
 .env.local
+credential.env
 
 # IDE
 .vscode/
