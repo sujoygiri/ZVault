@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+/* Legacy var(--z-vault-*) references kept for existing components */
+:root {
+  /* --color-zvault-bg-primary:   #020617;
+  --color-zvault-bg-secondary: #0f172a;
+  --color-zvault-accent:       #6366f1;
+  --color-zvault-accent-dark:  #4d4fc2;
+  --color-zvault-text:         #e2e8f0;
+  --color-zvault-text-muted:   #94a3b8;
+  --color-zvault-card-bg:      rgba(255, 255, 255, 0.04);
+  --color-zvault-card-border:  rgba(255, 255, 255, 0.08);
+  --color-zvault-success:      #34d399;
+  --color-zvault-danger:       #f87171;
+  --color-zvault-error:        #ff6b6b;
+  --color-zvault-overlay:      rgba(0, 0, 0, 0.75); */
+  --z-vault-sidebar-width: 16rem;
+  --z-vault-sidebar-border-color: rgb(30 41 59);
+  --z-vault-sidebar-padding: 1.5rem;
+  --z-vault-gradient: #3b82f6, #06b6d4;
+  --z-vault-background-drop-shadow:
+    rgba(0, 0, 0, 0.3) 0px 19px 38px, rgba(0, 0, 0, 0.22) 0px 15px 12px;
+  --z-vault-bg-gradient: #020617, #0f172a, #020617;
+  --z-vault-bg-primary: #020617;
+  --z-vault-bg-secondary: #0f172a;
+  --z-vault-accent: #6366f1;
+  --z-vault-text: #e2e8f0;
+  --z-vault-text-muted: #94a3b8;
+  --z-vault-card-bg: rgba(255, 255, 255, 0.04);
+  --z-vault-card-border: rgba(255, 255, 255, 0.08);
+  --z-vault-success: #34d399;
+  --z-vault-danger: #f87171;
+  --z-vault-card: #16161a;
+  --z-vault-accent-dark: #4d4fc2;
+  --z-vault-error: #ff6b6b;
+  --z-vault-radius: 16px;
+  --z-vault-overlay: rgba(0, 0, 0, 0.75);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}

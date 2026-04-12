@@ -1,0 +1,1316 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <!-- <base href="/"> -->
+    <title>Hello World!</title>
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self';">
+    <link rel="stylesheet" href="./index.css">
+</head>
+
+<body>
+    <!--main vault ui-->
+    <div class="z_vault__parent">
+        <div class="z_vault__child">
+            <!--master password input ui-->
+            <div class="z_vault__startup" id="z_vault__auth_form">
+                <div class="z_vault__startup_content">
+                    <!-- Startup container -->
+                    <div id="z_vault__startup_content_container">
+                        <!-- Header -->
+                        <div class="z_vault__startup_header">
+                            <div class="z_vault__startup_logo-wrapper">
+                                <div class="z_vault__startup_logo">🔐</div>
+                            </div>
+                            <h1 class="z_vault__startup_title">Z Vault</h1>
+                            <p class="z_vault__startup_subtitle">Your secure password manager</p>
+                            <p class="z_vault__startup_description">Choose how you'd like to get started</p>
+                        </div>
+                        <!-- Action Buttons -->
+                        <div class="z_vault__startup_actions">
+                            <!-- Google Sign In -->
+                            <button class="z_vault__startup_button" id="z_vault__startup_button-google">
+                                <span>
+                                    <span class="z_vault__startup_google-logo">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                            xmlns="http://www.w3.org/2000/svg">
+                                            <path
+                                                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                                                fill="#4285F4" />
+                                            <path
+                                                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                                                fill="#34A853" />
+                                            <path
+                                                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                                                fill="#FBBC05" />
+                                            <path
+                                                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                                                fill="#EA4335" />
+                                        </svg>
+                                    </span>
+                                    <span>Sign in to use cloud backup file</span>
+                                </span>
+                            </button>
+
+                            <!-- Local Backup -->
+                            <button class="z_vault__startup_button" id="z_vault__startup_button-local">
+                                <span>
+                                    <span class="z_vault__startup_icon">💾</span>
+                                    <span>I have local backup file</span>
+                                </span>
+                            </button>
+
+                            <!-- Start New -->
+                            <button class="z_vault__startup_button" id="z_vault__startup_button-new">
+                                <span>
+                                    <span class="z_vault__startup_icon">✨</span>
+                                    <span>Open new vault</span>
+                                </span>
+                            </button>
+                        </div>
+                        <!-- Footer -->
+                        <div class="z_vault__startup_footer">
+                            <p class="z_vault__startup_footer-text">
+                                By continuing, you agree to our
+                                <span class="z_vault__startup_footer-link" onclick="handleTerms()">Terms of
+                                    Service</span>
+                                and
+                                <span class="z_vault__startup_footer-link" onclick="handlePrivacy()">Privacy
+                                    Policy</span>
+                            </p>
+                        </div>
+                    </div>
+                    <!--need to implement password validation status message-->
+                    <div class="z_vault__startup_password_validation_message" style="display: none;">
+                        <div class="z_vault__startup_password_validation_text"></div>
+                    </div>
+                    <!-- Startup new vault creation form -->
+                    <div class="z_vault__create_master_password_form_section"
+                        id="z_vault__new_master_password_form_section">
+                        <div class="z_vault__create_master_password_form_header">
+                            <h3>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 16 16">
+                                    <path fill="currentColor" fill-rule="evenodd"
+                                        d="M11.351 1.091a4.528 4.528 0 0 1 3.44 3.16c.215.724.247 1.49.093 2.23a4.583 4.583 0 0 1-4.437 3.6c-.438 0-.874-.063-1.293-.19l-.8.938l-.379.175H7v1.5l-.5.5H5v1.5l-.5.5h-3l-.5-.5v-2.307l.146-.353L6.12 6.87a4.464 4.464 0 0 1-.2-1.405a4.528 4.528 0 0 1 5.431-4.375zm1.318 7.2a3.568 3.568 0 0 0 1.239-2.005l.004.005A3.543 3.543 0 0 0 9.72 2.08a3.576 3.576 0 0 0-2.8 3.4c-.01.456.07.908.239 1.33l-.11.543L2 12.404v1.6h2v-1.5l.5-.5H6v-1.5l.5-.5h1.245l.876-1.016l.561-.14a3.47 3.47 0 0 0 1.269.238a3.568 3.568 0 0 0 2.218-.795zm-.838-2.732a1 1 0 1 0-1.662-1.11a1 1 0 0 0 1.662 1.11z"
+                                        clip-rule="evenodd" stroke="currentColor" />
+                                </svg>
+                                <span>Create Master Password</span>
+                            </h3>
+                            <p>Choose a strong master password to protect your vault</p>
+                        </div>
+                        <div class="z_vault__create_master_password_form_group">
+                            <div class="z_vault__create_master_password_group">
+                                <label for="z_vault__create_master_password_input"
+                                    class="z_vault__create_master_password_label">Master
+                                    Password</label>
+                                <div class="z_vault__create_master_password_input_group">
+                                    <input type="password" id="z_vault__create_master_password_input"
+                                        style="padding: 0.5rem 2.5rem 0.5rem 0.75rem" />
+                                    <button class="z_vault__create_master_password_input_state_btn"
+                                        id="z_vault__create_master_password_state_change_btn" type="button">
+                                        <svg id="z_vault__new_form_input_eye_close_svg"
+                                            xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                            viewBox="0 0 24 24">
+                                            <path fill="none" stroke="currentColor" stroke-linecap="round"
+                                                stroke-linejoin="round" stroke-width="2"
+                                                d="M2 10s3.5 4 10 4s10-4 10-4M4 11.645L2 14m20 0l-1.996-2.352M8.914 13.68L8 16.5m7.063-2.812L16 16.5" />
+                                        </svg>
+                                        <svg id="z_vault__new_form_input_eye_open_svg" style="display: none;"
+                                            xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                            viewBox="0 0 24 24">
+                                            <g fill="none" stroke="currentColor" stroke-linecap="round"
+                                                stroke-linejoin="round" stroke-width="2">
+                                                <path
+                                                    d="M21.257 10.962c.474.62.474 1.457 0 2.076C19.764 14.987 16.182 19 12 19c-4.182 0-7.764-4.013-9.257-5.962a1.692 1.692 0 0 1 0-2.076C4.236 9.013 7.818 5 12 5c4.182 0 7.764 4.013 9.257 5.962Z"
+                                                    fill="currentColor" stroke="currentColor" />
+                                                <circle cx="12" cy="12" r="3" fill="none" stroke="#000" />
+                                            </g>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="z_vault__confirm_master_password_group">
+                                <label for="z_vault__confirm_master_password_input"
+                                    class="z_vault__confirm_master_password_label">Confirm Master Password</label>
+                                <div class="z_vault__confirm_master_password_input_group">
+                                    <input type="password" id="z_vault__confirm_master_password_input"
+                                        style="padding: 0.5rem 2.5rem 0.5rem 0.75rem" />
+                                    <button class="z_vault__confirm_master_password_input_state_btn"
+                                        id="z_vault__create_confirm_master_password_state_change_btn" type="button">
+                                        <svg id="z_vault__new_form_confirm_input_eye_close_svg"
+                                            xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                            viewBox="0 0 24 24">
+                                            <path fill="none" stroke="currentColor" stroke-linecap="round"
+                                                stroke-linejoin="round" stroke-width="2"
+                                                d="M2 10s3.5 4 10 4s10-4 10-4M4 11.645L2 14m20 0l-1.996-2.352M8.914 13.68L8 16.5m7.063-2.812L16 16.5" />
+                                        </svg>
+                                        <svg id="z_vault__new_form_confirm_input_eye_open_svg" style="display: none;"
+                                            xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                            viewBox="0 0 24 24">
+                                            <g fill="none" stroke="currentColor" stroke-linecap="round"
+                                                stroke-linejoin="round" stroke-width="2">
+                                                <path
+                                                    d="M21.257 10.962c.474.62.474 1.457 0 2.076C19.764 14.987 16.182 19 12 19c-4.182 0-7.764-4.013-9.257-5.962a1.692 1.692 0 0 1 0-2.076C4.236 9.013 7.818 5 12 5c4.182 0 7.764 4.013 9.257 5.962Z"
+                                                    fill="currentColor" stroke="currentColor" />
+                                                <circle cx="12" cy="12" r="3" fill="none" stroke="#000" />
+                                            </g>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <p id="z_vault__password_not_match_error"
+                                    style="display: none; color: rgb(248, 113, 113); font-size: small;">Password did not
+                                    match</p>
+                            </div>
+                            <div class="z_vault__master_password_creation_rule">
+                                <p>Password Requirements:</p>
+                                <ul>
+                                    <li class="z_vault__master_password_rule_text">• At least 8 characters</li>
+                                    <li class="z_vault__master_password_rule_text">• At least one uppercase letter</li>
+                                    <li class="z_vault__master_password_rule_text">• At least one lowercase letter</li>
+                                    <li class="z_vault__master_password_rule_text">• At least one number</li>
+                                    <li class="z_vault__master_password_rule_text">• At least one special character</li>
+                                </ul>
+                            </div>
+                            <div class="z_vault__create_master_password_form_action_btns">
+                                <button class="z_vault__master_password_create_btn z_vault__startup_form_action_btn"
+                                    id="z_vault__create_new_vault_btn" type="button" disabled>
+                                    <span>Create Vault</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                        style="width: 1.5rem; height: 1.5rem">
+                                        <path fill="currentColor"
+                                            d="M13.47 8.53a.75.75 0 0 1 1.06-1.06l4 4a.75.75 0 0 1 0 1.06l-4 4a.75.75 0 1 1-1.06-1.06l2.72-2.72H6.5a.75.75 0 0 1 0-1.5h9.69l-2.72-2.72Z" />
+                                    </svg>
+                                </button>
+                                <!-- <div class="z_vault__startup_action_btn_divider_group">
+                    <div class="z_vault__startup_action_btn_divider_line">
+                      <span></span>
+                    </div>
+                    <div class="z_vault__startup_action_btn_divider_content">
+                      <span>or</span>
+                    </div>
+                  </div>
+                  <button class="z_vault__existing_vault_btn z_vault__startup_form_action_btn"
+                    id="z_vault__existing_vault_unlock_btn" type="button">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 32 32"
+                      style="width: 1rem; height: 1rem">
+                      <path fill="currentColor"
+                        d="M12 4a5 5 0 1 1-5 5a5 5 0 0 1 5-5m0-2a7 7 0 1 0 7 7a7 7 0 0 0-7-7zm10 28h-2v-5a5 5 0 0 0-5-5H9a5 5 0 0 0-5 5v5H2v-5a7 7 0 0 1 7-7h6a7 7 0 0 1 7 7zm3-13.82l-2.59-2.59L21 15l4 4l7-7l-1.41-1.41L25 16.18z"
+                        stroke="currentColor" />
+                    </svg>
+                    Existing User? Unlock Vault
+                  </button> -->
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Startup existing vault access form -->
+                    <div class="z_vault__master_password_form_section animate__bounceInRight"
+                        id="z_vault__existing_password_from_section">
+                        <div class="z_vault__master_password_form_header">
+                            <h3>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 16 16">
+                                    <path fill="currentColor"
+                                        d="M13 7h-1V5a4 4 0 1 0-8 0v2H3L2 8v6l1 1h10l1-1V8l-1-1zM5 5a3 3 0 1 1 6 0v2H5V5zm8 9H3V8h10v6z" />
+                                </svg>
+                                Enter Master Password
+                            </h3>
+                            <p>Unlock your vault with your master password</p>
+                        </div>
+                        <div class="z_vault__master_password_form_group">
+                            <div class="z_vault__user_master_password_group">
+                                <label for="z_vault__user_master_password_input"
+                                    class="z_vault__user_master_password_label">Master
+                                    Password</label>
+                                <div class="z_vault__user_master_password_input_group">
+                                    <input id="z_vault__user_master_password_input"
+                                        style="padding: 0.5rem 2.5rem 0.5rem 0.75rem" type="password" />
+                                    <button class="z_vault__user_master_password_input_state_btn"
+                                        id="z_vault__user_master_password_state_change_btn" type="button">
+                                        <svg id="z_vault__existing_form_input_eye_close_svg"
+                                            xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                            viewBox="0 0 24 24">
+                                            <path fill="none" stroke="currentColor" stroke-linecap="round"
+                                                stroke-linejoin="round" stroke-width="2"
+                                                d="M2 10s3.5 4 10 4s10-4 10-4M4 11.645L2 14m20 0l-1.996-2.352M8.914 13.68L8 16.5m7.063-2.812L16 16.5" />
+                                        </svg>
+                                        <svg id="z_vault__existing_form_input_eye_open_svg" style="display: none;"
+                                            xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                            viewBox="0 0 24 24">
+                                            <g fill="none" stroke="currentColor" stroke-linecap="round"
+                                                stroke-linejoin="round" stroke-width="2">
+                                                <path
+                                                    d="M21.257 10.962c.474.62.474 1.457 0 2.076C19.764 14.987 16.182 19 12 19c-4.182 0-7.764-4.013-9.257-5.962a1.692 1.692 0 0 1 0-2.076C4.236 9.013 7.818 5 12 5c4.182 0 7.764 4.013 9.257 5.962Z"
+                                                    fill="currentColor" stroke="currentColor" />
+                                                <circle cx="12" cy="12" r="3" fill="none" stroke="#000" />
+                                            </g>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <button class="z_vault__unlock_btn z_vault__startup_form_action_btn" type="button"
+                                id="z_vault__existing_vault_unlock_btn">
+                                <span>Unlock Vault</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                    style="width: 1.5rem; height: 1.5rem">
+                                    <path fill="currentColor"
+                                        d="M13.47 8.53a.75.75 0 0 1 1.06-1.06l4 4a.75.75 0 0 1 0 1.06l-4 4a.75.75 0 1 1-1.06-1.06l2.72-2.72H6.5a.75.75 0 0 1 0-1.5h9.69l-2.72-2.72Z" />
+                                </svg>
+                            </button>
+                            <!-- <div class="z_vault__startup_action_btn_divider_group">
+                  <div class="z_vault__startup_action_btn_divider_line">
+                    <span></span>
+                  </div>
+                  <div class="z_vault__startup_action_btn_divider_content">
+                    <span>or</span>
+                  </div>
+                </div>
+                <button class="z_vault__new_vault_btn z_vault__startup_form_action_btn"
+                  id="z_vault__new_vault_creation_btn" type="button">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                    style="width: 1rem; height: 1rem">
+                    <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                      stroke-width="2"
+                      d="m12 3l-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3ZM5 3v4m14 10v4M3 5h4m10 14h4" />
+                  </svg>
+                  New User? Create Master Password
+                </button> -->
+                        </div>
+                    </div>
+                    <div class="z_vault__startup_extra">
+                        <p class="z_vault__startup_extra_text">
+                            🔒 Your master password is encrypted and secure
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <!-- main content -->
+            <div class="z_vault__sidebar_wrapper" id="z_vault__vault_content" style="display: none">
+                <div class="z_vault__sidebar_flex">
+                    <div class="z_vault__sidebar">
+                        <div class="z_vault__sidebar_child">
+                            <div class="z_vault__sidebar_content">
+                                <div class="z_vault__sidebar_header">
+                                    <div class="z_vault__sidebar_header_content">
+                                        <div class="z_vault__sidebar_header_logo">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round">
+                                                <path
+                                                    d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z">
+                                                </path>
+                                            </svg>
+                                        </div>
+                                        <div class="z_vault__sidebar_header_text">
+                                            <h2>SecureVault</h2>
+                                            <p>Password Manager</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="z_vault__sidebar_menu">
+                                    <div class="z_vault__sidebar_menu_children">
+                                        <div class="z_vault__sidebar_menu_header">Categories</div>
+                                        <div class="z_vault__sidebar_menu_items">
+                                            <ul class="z_vault__sidebar_menu_list">
+                                                <li class="z_vault__sidebar_menu_item" data-item="menuPassword">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" height="24px"
+                                                        viewBox="0 -960 960 960" width="24px" fill="currentColor">
+                                                        <path
+                                                            d="M80-200v-80h800v80H80Zm46-242-52-30 34-60H40v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Zm320 0-52-30 34-60h-68v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Zm320 0-52-30 34-60h-68v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Z" />
+                                                    </svg>
+                                                    <span class="z_vault__sidebar_menu_item_label">Passwords</span>
+                                                    <!-- <ul class="z_vault__sidebar_submenu">
+                                                        <li class="z_vault__sidebar_submenu_item">All Passwords</li>
+                                                        <li class="z_vault__sidebar_submenu_item">Recently Used</li>
+                                                        <li class="z_vault__sidebar_submenu_item">Favorites</li>
+                                                    </ul> -->
+                                                </li>
+
+                                                <li class="z_vault__sidebar_menu_item" data-item="menuText">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" height="24px"
+                                                        viewBox="0 -960 960 960" width="24px" fill="currentColor">
+                                                        <path
+                                                            d="M280-280h280v-80H280v80Zm0-160h400v-80H280v80Zm0-160h400v-80H280v80Zm-80 480q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-560H200v560Zm0-560v560-560Z" />
+                                                    </svg>
+                                                    <span class="z_vault__sidebar_menu_item_label">Texts</span>
+                                                    <!-- <ul class="z_vault__sidebar_submenu">
+                                                        <li class="z_vault__sidebar_submenu_item">All Texts</li>
+                                                        <li class="z_vault__sidebar_submenu_item">Important Notes</li>
+                                                        <li class="z_vault__sidebar_submenu_item">Documents</li>
+                                                    </ul> -->
+                                                </li>
+                                                <!-- <li class="z_vault__sidebar_menu_item">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                                        class="lucide lucide-user w-4 h-4">
+                                                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                                                        <circle cx="12" cy="7" r="4"></circle>
+                                                    </svg>
+                                                    <span class="z_vault__sidebar_menu_item_label">Personal</span>
+                                                </li>
+                                                <li class="z_vault__sidebar_menu_item">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                                                        <rect width="20" height="14" x="2" y="6" rx="2"></rect>
+                                                    </svg>
+                                                    <span class="z_vault__sidebar_menu_item_label">Work</span>
+                                                </li>
+                                                <li class="z_vault__sidebar_menu_item">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <rect width="20" height="14" x="2" y="5" rx="2"></rect>
+                                                        <line x1="2" x2="22" y1="10" y2="10"></line>
+                                                    </svg>
+                                                    <span class="z_vault__sidebar_menu_item_label">Finance</span>
+                                                </li>
+                                                <li class="z_vault__sidebar_menu_item">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z">
+                                                        </path>
+                                                        <path d="M3 6h18"></path>
+                                                        <path d="M16 10a4 4 0 0 1-8 0"></path>
+                                                    </svg>
+                                                    <span class="z_vault__sidebar_menu_item_label">Shopping</span>
+                                                </li>
+                                                <li class="z_vault__sidebar_menu_item">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path
+                                                            d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z">
+                                                        </path>
+                                                        <path d="M20 3v4"></path>
+                                                        <path d="M22 5h-4"></path>
+                                                        <path d="M4 17v2"></path>
+                                                        <path d="M5 18H3"></path>
+                                                    </svg>
+                                                    <span class="z_vault__sidebar_menu_item_label">Social</span>
+                                                </li> -->
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="z_vault__sidebar_menu_bottom_children">
+                                        <div class="z_vault__sidebar_menu_bottom_items">
+                                            <div class="z_vault__sidebar_menu_bottom_item"
+                                                id="z_vault__sidebar_menu_bottom_item_settings">
+                                                <svg xmlns="http://www.w3.org/2000/svg" height="24px"
+                                                    viewBox="0 -960 960 960" width="24px" fill="currentColor">
+                                                    <path
+                                                        d="m370-80-16-128q-13-5-24.5-12T307-235l-119 50L78-375l103-78q-1-7-1-13.5v-27q0-6.5 1-13.5L78-585l110-190 119 50q11-8 23-15t24-12l16-128h220l16 128q13 5 24.5 12t22.5 15l119-50 110 190-103 78q1 7 1 13.5v27q0 6.5-2 13.5l103 78-110 190-118-50q-11 8-23 15t-24 12L590-80H370Zm70-80h79l14-106q31-8 57.5-23.5T639-327l99 41 39-68-86-65q5-14 7-29.5t2-31.5q0-16-2-31.5t-7-29.5l86-65-39-68-99 42q-22-23-48.5-38.5T533-694l-13-106h-79l-14 106q-31 8-57.5 23.5T321-633l-99-41-39 68 86 64q-5 15-7 30t-2 32q0 16 2 31t7 30l-86 65 39 68 99-42q22 23 48.5 38.5T427-266l13 106Zm42-180q58 0 99-41t41-99q0-58-41-99t-99-41q-59 0-99.5 41T342-480q0 58 40.5 99t99.5 41Zm-2-140Z" />
+                                                </svg>
+                                                <span>Settings</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <main class="z_vault__main">
+                        <div class="z_vault__main_scroll">
+                            <div class="z_vault__main_content">
+                                <div class="z_vault__main_container">
+                                    <div class="z_vault__main_section">
+                                        <div class="z_vault__main_header">
+                                            <div class="z_vault__main_header_content">
+                                                <h1 class="z_vault__main_header_title">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                                        style="color: rgb(96 165 250);width: 2rem;height: 2rem;">
+                                                        <path
+                                                            d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z">
+                                                        </path>
+                                                    </svg>
+                                                    Your Vault
+                                                </h1>
+                                                <p class="z_vault__main_header_subtitle">
+                                                    Securely manage all your passwords in one place
+                                                </p>
+                                            </div>
+                                            <div class="z_vault__main_header_btn">
+                                                <button class="z_vault__main_header_btn_action"
+                                                    id="z_vault__add_data_btn">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M5 12h14"></path>
+                                                        <path d="M12 5v14"></path>
+                                                    </svg>
+                                                    Add
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="z_vault__main_search">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                viewBox="0 0 16 16" style="color: rgb(255 255 255)">
+                                                <path fill="currentColor"
+                                                    d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0a5.5 5.5 0 0 1 11 0z" />
+                                            </svg>
+                                            <input type="text" class="z_vault__main_search_input" />
+                                        </div>
+                                    </div>
+                                    <!-- Password List -->
+                                    <div id="z_vault__main_password_list">
+      <div class="z_vault__main_password_list_card" id="mainPasswordCard-${password.id}">
+        <div class="z_vault__main_password_list_card_content">
+          <div class="z_vault__main_password_list_card_row">
+            <div class="z_vault__main_password_list_card_row_left">
+              <div class="z_vault__main_password_list_card_icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" style="
+                      color: rgb(96 165 250);
+                      width: 1.25rem;
+                      height: 1.25rem;
+                    ">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
+                  <path d="M2 12h20"></path>
+                </svg>
+              </div>
+              <div>
+                <div class="z_vault__main_password_list_card_info">
+                  <h3 class="z_vault__main_password_list_card_title">
+                    ${password.title}
+                  </h3>
+                  <p class="z_vault__main_password_list_card_email">
+                    ${password.usernameOrEmail}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="z_vault__main_password_list_card_actions">
+              <button class="z_vault__main_password_list_card_action_btn" id="seeNotes-${password.id}">
+                <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor"><path d="M340-460h280v-64H340v64Zm0 120h280v-64H340v64Zm0 120h174v-64H340v64ZM263.72-96Q234-96 213-117.15T192-168v-624q0-29.7 21.15-50.85Q234.3-864 264-864h312l192 192v504q0 29.7-21.16 50.85Q725.68-96 695.96-96H263.72ZM528-624v-168H264v624h432v-456H528ZM264-792v168-168 624-624Z"/></svg>
+              </button>
+              <button class="z_vault__main_password_list_card_action_btn" id="addFavorite-${password.id}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 1024 1024"
+                  style="width: 1.2rem; height: 1.2rem">
+                  <path fill="currentColor"
+                    d="m908.1 353.1l-253.9-36.9L540.7 86.1c-3.1-6.3-8.2-11.4-14.5-14.5c-15.8-7.8-35-1.3-42.9 14.5L369.8 316.2l-253.9 36.9c-7 1-13.4 4.3-18.3 9.3a32.05 32.05 0 0 0 .6 45.3l183.7 179.1l-43.4 252.9a31.95 31.95 0 0 0 46.4 33.7L512 754l227.1 119.4c6.2 3.3 13.4 4.4 20.3 3.2c17.4-3 29.1-19.5 26.1-36.9l-43.4-252.9l183.7-179.1c5-4.9 8.3-11.3 9.3-18.3c2.7-17.5-9.5-33.7-27-36.3zM664.8 561.6l36.1 210.3L512 672.7L323.1 772l36.1-210.3l-152.8-149L417.6 382L512 190.7L606.4 382l211.2 30.7l-152.8 148.9z" />
+                </svg>
+              </button>
+              <div style="position:relative;">
+                <button class="z_vault__main_password_list_card_action_btn" id="editPassword-${password.id}">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                    style="width: 1.2rem; height: 1.2rem">
+                    <path fill="currentColor"
+                      d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2s2-.9 2-2s-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2s2-.9 2-2s-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2s2-.9 2-2s-.9-2-2-2z" />
+                  </svg>
+                </button>
+                <div class="z_vault__list_item_action_container">
+                  <div class="z_vault__list_item_action" id="passwordEditBtn-${password.id}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="#009fa1ff" d="m7 17.013l4.413-.015l9.632-9.54c.378-.378.586-.88.586-1.414s-.208-1.036-.586-1.414l-1.586-1.586c-.756-.756-2.075-.752-2.825-.003L7 12.583v4.43zM18.045 4.458l1.589 1.583l-1.597 1.582l-1.586-1.585l1.594-1.58zM9 13.417l6.03-5.973l1.586 1.586l-6.029 5.971L9 15.006v-1.589z"/><path fill="#009fa1ff" d="M5 21h14c1.103 0 2-.897 2-2v-8.668l-2 2V19H8.158c-.026 0-.053.01-.079.01c-.033 0-.066-.009-.1-.01H5V5h6.847l2-2H5c-1.103 0-2 .897-2 2v14c0 1.103.897 2 2 2z"/></svg>
+                    <p>Edit</p>
+                  </div>
+                  <div class="z_vault__list_item_action" id="passwordDeleteBtn-${password.id}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 20 20"><path fill="#c52020" d="M8.5 4h3a1.5 1.5 0 0 0-3 0Zm-1 0a2.5 2.5 0 0 1 5 0h5a.5.5 0 0 1 0 1h-1.054l-1.194 10.344A3 3 0 0 1 12.272 18H7.728a3 3 0 0 1-2.98-2.656L3.554 5H2.5a.5.5 0 0 1 0-1h5ZM5.741 15.23A2 2 0 0 0 7.728 17h4.544a2 2 0 0 0 1.987-1.77L15.439 5H4.561l1.18 10.23ZM8.5 7.5A.5.5 0 0 1 9 8v6a.5.5 0 0 1-1 0V8a.5.5 0 0 1 .5-.5ZM12 8a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V8Z"/></svg>
+                    <p>Delete</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="z_vault__main_password_list_card_password">
+            <div class="z_vault__main_password_list_card_password_row">
+              <div class="z_vault__main_password_list_card_password_row_header">
+                <span>Username/Email</span>
+                <div class="z_vault__main_password_list_card_password_actions">
+                  <button class="z_vault__main_password_list_card_password_action_btn" id="showUsername-${password.id}">
+                    <div id="usernameShowHideIconContainer-${password.id}">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 1024 1024"
+                        style="width: 1rem; height: 1rem">
+                        <path fill="currentColor"
+                          d="M942.2 486.2C847.4 286.5 704.1 186 512 186c-192.2 0-335.4 100.5-430.2 300.3a60.3 60.3 0 0 0 0 51.5C176.6 737.5 319.9 838 512 838c192.2 0 335.4-100.5 430.2-300.3c7.7-16.2 7.7-35 0-51.5zM512 766c-161.3 0-279.4-81.8-362.7-254C232.6 339.8 350.7 258 512 258c161.3 0 279.4 81.8 362.7 254C791.5 684.2 673.4 766 512 766zm-4-430c-97.2 0-176 78.8-176 176s78.8 176 176 176s176-78.8 176-176s-78.8-176-176-176zm0 288c-61.9 0-112-50.1-112-112s50.1-112 112-112s112 50.1 112 112s-50.1 112-112 112z" />
+                      </svg>
+                    </div>
+                  </button>
+                  <button class="z_vault__main_password_list_card_password_action_btn" id="copyUsername-${password.id}">
+                    <div id="usernameCopyIconContainer-${password.id}">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        style="width: 1rem; height: 1rem">
+                        <path fill="currentColor"
+                          d="M20 2H10c-1.103 0-2 .897-2 2v4H4c-1.103 0-2 .897-2 2v10c0 1.103.897 2 2 2h10c1.103 0 2-.897 2-2v-4h4c1.103 0 2-.897 2-2V4c0-1.103-.897-2-2-2zM4 20V10h10l.002 10H4zm16-6h-4v-4c0-1.103-.897-2-2-2h-4V4h10v10z" />
+                      </svg>
+                    </div>
+                  </button>
+                </div>
+              </div>
+              <code class="z_vault__main_password" id="mainUsername-${password.id}" data-type="dot">••••••••••••</code>
+            </div>
+          </div>
+          <div class="z_vault__main_password_list_card_password">
+            <div class="z_vault__main_password_list_card_password_row">
+              <div class="z_vault__main_password_list_card_password_row_header">
+                <span>Password</span>
+                <div class="z_vault__main_password_list_card_password_actions">
+                  <button class="z_vault__main_password_list_card_password_action_btn" id="showPassword-${password.id}">
+                    <div id="passwordShowHideIconContainer-${password.id}">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 1024 1024"
+                        style="width: 1rem; height: 1rem">
+                        <path fill="currentColor"
+                          d="M942.2 486.2C847.4 286.5 704.1 186 512 186c-192.2 0-335.4 100.5-430.2 300.3a60.3 60.3 0 0 0 0 51.5C176.6 737.5 319.9 838 512 838c192.2 0 335.4-100.5 430.2-300.3c7.7-16.2 7.7-35 0-51.5zM512 766c-161.3 0-279.4-81.8-362.7-254C232.6 339.8 350.7 258 512 258c161.3 0 279.4 81.8 362.7 254C791.5 684.2 673.4 766 512 766zm-4-430c-97.2 0-176 78.8-176 176s78.8 176 176 176s176-78.8 176-176s-78.8-176-176-176zm0 288c-61.9 0-112-50.1-112-112s50.1-112 112-112s112 50.1 112 112s-50.1 112-112 112z" />
+                      </svg>
+                    </div>
+                  </button>
+                  <button class="z_vault__main_password_list_card_password_action_btn" id="copyPassword-${password.id}">
+                    <div id="passwordCopyIconContainer-${password.id}">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        style="width: 1rem; height: 1rem">
+                        <path fill="currentColor"
+                          d="M20 2H10c-1.103 0-2 .897-2 2v4H4c-1.103 0-2 .897-2 2v10c0 1.103.897 2 2 2h10c1.103 0 2-.897 2-2v-4h4c1.103 0 2-.897 2-2V4c0-1.103-.897-2-2-2zM4 20V10h10l.002 10H4zm16-6h-4v-4c0-1.103-.897-2-2-2h-4V4h10v10z" />
+                      </svg>
+                    </div>
+                  </button>
+                </div>
+              </div>
+              <code class="z_vault__main_password" id="mainPassword-${password.id}" data-type="dot">••••••••••••</code>
+            </div>
+          </div>
+          <div class="z_vault__main_password_list_card_footer">
+            <div class="z_vault__main_password_list_card_footer_label">
+              ${password.category}
+            </div>
+            <div class="z_vault__main_password_list_card_footer_strength">
+              <!--need to implement password strength-->
+            </div>
+          </div>
+          <a href="${password.url}" class="z_vault__main_password_list_card_footer_link"
+            target="_blank">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+              style="width: 1rem; height: 1rem">
+              <path fill="currentColor" d="m13 3l3.293 3.293l-7 7l1.414 1.414l7-7L21 11V3z" />
+              <path fill="#ffffff"
+                d="M19 19H5V5h7l-2-2H5c-1.103 0-2 .897-2 2v14c0 1.103.897 2 2 2h14c1.103 0 2-.897 2-2v-5l-2-2v7z" />
+            </svg>
+            <span class="z_vault__main_password_list_card_footer_link_label">Visit Site</span>
+          </a>
+        </div>
+        <div class="z_vault__main_password_list_card_content z_vault__main_password_list_card_back">
+          <div class="z_vault__main_password_list_card_actions">
+            <button class="z_vault__main_password_list_card_action_btn" id="seePassword-${password.id}">
+              <svg xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor"><path d="M444-53q-55-6-106.5-29.5T244-148l51-51q32 31 70 49t79 24v73Zm72 0v-73q100-14 164-87t64-174q0-110-76.5-186.5T481-650h-27l77 76-51 51-170-169 170-170 51 51-90 89h39q70 0 131 26t106.5 71.5Q763-579 789.5-518T816-387q0 131-85.5 225.5T516-53ZM198-204q-29-45-41.5-94.5T144-399h73q0 37 8 73t27 69l-54 53Zm-43-267q11-42 32.5-81t54.5-72l51 50q-23 23-38 49t-24 54h-76Z"/></svg>
+            </button>
+          </div>
+          <div class="z_vault__main_password_list_card_note">
+            <p id="passwordNote-${password.id}"></p>
+          </div>
+        </div>
+      </div>
+     
+                                    </div>
+                                    <div id="z_vault__no_data_found_section"></div>
+                                    <div class="z_vault__pagination_container">
+                                        <div class="pagination" id="pagination"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- add data modal -->
+    <div id="modalBackdrop" class="z_vault__add_data_modal_backdrop">
+        <div id="addModal" class="z_vault__add_data_modal_container">
+            <div class="z_vault__modal_header">
+                <h2 class="z_vault__modal_header_title">Add New Entry</h2>
+                <div class="z_vault__modal_close_action">
+                    <button id="z_vault__modal_close_btn" class="z_vault__modal_close_btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                            style="width: 1rem; height: 1rem">
+                            <path fill="currentColor" stroke="currentColor" stroke-linecap="round" stroke-width="2"
+                                d="M20 20L4 4m16 0L4 20" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="z_vault__password_form_container">
+                <div class="z_vault__password_form_tab_group">
+                    <button class="z_vault__password_form_tab_group_btn" data-state="active" data-type="password">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                            fill="currentColor">
+                            <path
+                                d="M80-200v-80h800v80H80Zm46-242-52-30 34-60H40v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Zm320 0-52-30 34-60h-68v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Zm320 0-52-30 34-60h-68v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Z" />
+                        </svg>Password
+                    </button>
+                    <button class="z_vault__password_form_tab_group_btn" data-type="text">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                            fill="currentColor">
+                            <path
+                                d="M200-200h560v-367L567-760H200v560Zm0 80q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h400l240 240v400q0 33-23.5 56.5T760-120H200Zm80-160h400v-80H280v80Zm0-160h400v-80H280v80Zm0-160h280v-80H280v80Zm-80 400v-560 560Z" />
+                        </svg>Text
+                    </button>
+                    <button class="z_vault__password_form_tab_group_btn" data-type="generate">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                            fill="currentColor">
+                            <path
+                                d="M440-320h80v-120h120v-80H520v-120h-80v120H320v80h120v120Zm40 240q-16 0-30.5-5.5T424-103L105-423q-11-12-18-26.5T80-480q0-16 7-30.5t18-25.5l319-320q12-12 26-18t30-6q16 0 31 6t26 18l318 320q11 12 18 26t7 30q0 16-6.5 30.5T855-423L537-103q-11 11-26 17t-31 6Zm0-80 319-320-319-320-319 320 319 320Zm0-320Z" />
+                        </svg>Generator
+                    </button>
+                </div>
+
+                <!-- Password Form -->
+                <div class="z_vault__add_data_modal_password_form z_vault__popup_form">
+                    <div class="z_vault__form_group">
+                        <label for="z_vault__password_form_service_input" class="z_vault__form_label">Service Name
+                            *</label>
+                        <input type="text" id="z_vault__password_form_service_input" class="z_vault__input"
+                            placeholder="e.g., Gmail, Netflix, GitHub" />
+                    </div>
+
+                    <div class="z_vault__grid_row">
+                        <div class="z_vault__form_group">
+                            <label for="z_vault__password_form_name_or_email_input" class="z_vault__form_label">Username
+                                / Email</label>
+                            <input type="text" id="z_vault__password_form_name_or_email_input" class="z_vault__input"
+                                placeholder="username@example.com" />
+                        </div>
+
+                        <div class="z_vault__form_group">
+                            <label for="z_vault__password_form_category_select"
+                                class="z_vault__form_label">Category</label>
+                            <select id="z_vault__password_form_category_select" class="z_vault__select">
+                                <option value="personal" selected>Personal</option>
+                                <option value="work">Work</option>
+                                <option value="social">Social</option>
+                                <option value="finance">Finance</option>
+                                <option value="shopping">Shopping</option>
+                                <option value="entertainment">Entertainment</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="z_vault__form_group">
+                        <label for="z_vault__password_form_password_input" class="z_vault__form_label">Password
+                            *</label>
+                        <div class="z_vault__password_wrapper">
+                            <input type="text" id="z_vault__password_form_password_input" class="z_vault__input"
+                                placeholder="Enter or generate password" />
+                            <button class="z_vault__password_copy_btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960"
+                                    width="24px" fill="currentColor">
+                                    <path
+                                        d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="z_vault__form_group">
+                        <label for="z_vault__password_form_website_input" class="z_vault__form_label">Website
+                            URL</label>
+                        <input type="text" id="z_vault__password_form_website_input" class="z_vault__input"
+                            placeholder="https://example.com" />
+                    </div>
+
+                    <div class="z_vault__form_group">
+                        <label for="z_vault__password_form_note_text" class="z_vault__form_label">Notes</label>
+                        <textarea id="z_vault__password_form_note_text"
+                            placeholder="Additional notes or security questions..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Text Form -->
+                <div class="z_vault__add_data_modal_text_form z_vault__popup_form" style="display: none;">
+                    <div class="z_vault__form_group">
+                        <label for="z_vault__text_form_title_input" class="z_vault__form_label">Title *</label>
+                        <input type="text" id="z_vault__text_form_title_input" class="z_vault__input"
+                            placeholder="Example title" />
+                    </div>
+
+                    <div class="z_vault__form_group">
+                        <label for="z_vault__text_form_category_select" class="z_vault__form_label">Category</label>
+                        <select id="z_vault__text_form_category_select" class="z_vault__select">
+                            <option value="personal" selected>Personal</option>
+                            <option value="work">Work</option>
+                            <option value="social">Social</option>
+                            <option value="finance">Finance</option>
+                            <option value="shopping">Shopping</option>
+                            <option value="entertainment">Entertainment</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="z_vault__form_group">
+                        <label for="z_vault__text_form_note_text" class="z_vault__form_label">Content *</label>
+                        <textarea id="z_vault__text_form_note_text" placeholder="Your secure text content..."
+                            rows="14"></textarea>
+                    </div>
+                </div>
+
+                <!-- Generator -->
+                <div class="z_vault__password_generator_form z_vault__popup_form" style="display: none;">
+                    <div class="z_vault__generator_length">
+                        <label>Password Length: <span id="lengthDisplay">16</span></label>
+                        <input type="range" id="z_vault__password_generator_slider_input" value="16" min="8" max="64"
+                            step="1" />
+                    </div>
+
+                    <div class="z_vault__generated_password_box">
+                        <p>Generated Password</p>
+                        <code id="z_vault__generated_password">Click Generate to create</code>
+                    </div>
+
+                    <button id="z_vault__password_generator_btn">Generate Strong Password</button>
+                </div>
+            </div>
+
+            <div class="z_vault__add_data_modal_action_buttons">
+                <button class="z_vault__action_btn" id="z_vault__password_form_action_cancel_btn">Cancel</button>
+                <button class="z_vault__action_btn" id="z_vault__password_form_action_save_btn">Save Entry</button>
+            </div>
+        </div>
+    </div>
+    <!-- settings modal -->
+    <div id="z_vault__settings_panel_modalBackdrop" class="z_vault__settings_panel_modal_backdrop">
+        <div id="z_vault__settings_panelModal" class="z_vault__settings_panel_modal">
+            <div class="z_vault__settings_panel_modal-header">
+                <h2>Settings</h2>
+                <div id="z_vault__settings_panelModalCloseBtn" class="z_vault__settings_panel_modal_close_btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                        fill="currentColor">
+                        <path
+                            d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
+                    </svg>
+                </div>
+            </div>
+            <div class="z_vault__settings_panel_modal_container">
+                <nav class="z_vault__settings_panel_sidebar">
+                    <div data-section="general" class="z_vault__settings_panel_sidebar-item z_vault__active">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px"
+                            fill="currentColor">
+                            <path
+                                d="M230.67-160q-29.67 0-50.17-20.5T160-230.67q0-29.66 20.5-50.16 20.5-20.5 50.17-20.5 29.66 0 50.16 20.5 20.5 20.5 20.5 50.16 0 29.67-20.5 50.17T230.67-160ZM480-160q-29.67 0-50.17-20.5t-20.5-50.17q0-29.66 20.5-50.16 20.5-20.5 50.17-20.5t50.17 20.5q20.5 20.5 20.5 50.16 0 29.67-20.5 50.17T480-160Zm249.33 0q-29.66 0-50.16-20.5-20.5-20.5-20.5-50.17 0-29.66 20.5-50.16 20.5-20.5 50.16-20.5 29.67 0 50.17 20.5t20.5 50.16q0 29.67-20.5 50.17T729.33-160ZM230.67-409.33q-29.67 0-50.17-20.5T160-480q0-29.67 20.5-50.17t50.17-20.5q29.66 0 50.16 20.5 20.5 20.5 20.5 50.17t-20.5 50.17q-20.5 20.5-50.16 20.5Zm249.33 0q-29.67 0-50.17-20.5T409.33-480q0-29.67 20.5-50.17t50.17-20.5q29.67 0 50.17 20.5t20.5 50.17q0 29.67-20.5 50.17T480-409.33Zm249.33 0q-29.66 0-50.16-20.5-20.5-20.5-20.5-50.17t20.5-50.17q20.5-20.5 50.16-20.5 29.67 0 50.17 20.5T800-480q0 29.67-20.5 50.17t-50.17 20.5ZM230.67-658.67q-29.67 0-50.17-20.5T160-729.33q0-29.67 20.5-50.17t50.17-20.5q29.66 0 50.16 20.5 20.5 20.5 20.5 50.17 0 29.66-20.5 50.16-20.5 20.5-50.16 20.5Zm249.33 0q-29.67 0-50.17-20.5t-20.5-50.16q0-29.67 20.5-50.17T480-800q29.67 0 50.17 20.5t20.5 50.17q0 29.66-20.5 50.16-20.5 20.5-50.17 20.5Zm249.33 0q-29.66 0-50.16-20.5-20.5-20.5-20.5-50.16 0-29.67 20.5-50.17t50.16-20.5q29.67 0 50.17 20.5t20.5 50.17q0 29.66-20.5 50.16-20.5 20.5-50.17 20.5Z" />
+                        </svg>
+                        <span>General</span>
+                    </div>
+                    <div data-section="security" class="z_vault__settings_panel_sidebar-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px"
+                            fill="currentColor">
+                            <path
+                                d="M480-80q-139.67-35-229.83-161.5Q160-368 160-520v-240l320-120 320 120v240q0 152-90.17 278.5Q619.67-115 480-80Zm0-69.33q103-33.34 171-125.17T730.67-480H480v-328.33l-253.33 94.66V-520q0 11.67.33 19.67.33 8 2.33 20.33H480v330.67Z" />
+                        </svg>
+                        <span>Security</span>
+                    </div>
+                    <div data-section="backup" class="z_vault__settings_panel_sidebar-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px"
+                            fill="currentColor">
+                            <path
+                                d="M253.33-160q-87.66 0-150.5-62.33Q40-284.67 40-372.33q0-78 48.67-138 48.66-60 126-73.67 21.66-95.33 96-155.33 74.33-60 170.66-60 114.34 0 192.5 81.5Q752-636.33 752-521.33v16q71 1.33 119.5 50.83T920-332.67q0 71-50.83 121.84Q818.33-160 747.33-160h-234q-27 0-46.83-19.83-19.83-19.84-19.83-46.84v-240.66l-76.67 76-47.33-47.34L480-596l157.33 157.33L590-391.33l-76.67-76v240.66h234q44 0 75-31t31-75q0-44-31-75t-75-31h-62v-82.66q0-87-59.83-149.17-59.83-62.17-146.83-62.17-87 0-147.17 62.17-60.17 62.17-60.17 149.17H252q-60.67 0-103 42.66Q106.67-436 106.67-374q0 60.67 42.95 104t103.71 43.33H380V-160H253.33ZM480-446.67Z" />
+                        </svg>
+                        <span>Backup</span>
+                    </div>
+                    <div data-section="appearance" class="z_vault__settings_panel_sidebar-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px"
+                            fill="currentColor">
+                            <path
+                                d="M480-80q-82 0-155-31.5t-127.5-86Q143-252 111.5-325T80-480q0-84.33 32.17-157.33 32.16-73 87.66-127t129.84-84.84Q404-880 488.67-880 568-880 639-853.17q71 26.84 124.5 74.34t85 112.66Q880-601 880-524q0 110.33-65.33 172.5-65.34 62.17-168 62.17H572q-15 0-24.83 11-9.84 11-9.84 24.33 0 22 14.67 42.17 14.67 20.16 14.67 46.5 0 42-23.17 63.66Q520.33-80 480-80Zm0-400Zm-228.67 30.67q22 0 37.67-15.67 15.67-15.67 15.67-37.67T289-540.33Q273.33-556 251.33-556t-37.66 15.67Q198-524.67 198-502.67q0 22 15.67 37.67 15.66 15.67 37.66 15.67Zm124-166.67q22 0 37.67-15.67 15.67-15.66 15.67-37.66 0-22-15.67-37.67-15.67-15.67-37.67-15.67T337.67-707Q322-691.33 322-669.33t15.67 37.66Q353.33-616 375.33-616Zm209.34 0q22 0 37.66-15.67Q638-647.33 638-669.33q0-22-15.67-37.67-15.66-15.67-37.66-15.67-22 0-37.67 15.67-15.67 15.67-15.67 37.67T547-631.67Q562.67-616 584.67-616ZM712-449.33q22 0 37.67-15.67 15.66-15.67 15.66-37.67t-15.66-37.66Q734-556 712-556t-37.67 15.67q-15.66 15.66-15.66 37.66 0 22 15.66 37.67Q690-449.33 712-449.33ZM480-146.67q10.33 0 15.17-4.66 4.83-4.67 4.83-14 0-14-14.67-28.34Q470.67-208 470.67-248q0-44.67 29.66-76.33Q530-356 574.67-356h72q72.66 0 119.66-42.5t47-125.5q0-128.33-97.5-208.83t-227.16-80.5q-142.67 0-242.34 96.66Q146.67-620 146.67-480q0 138.33 97.5 235.83T480-146.67Z" />
+                        </svg>
+                        <span>Appearance</span>
+                    </div>
+                    <div data-section="notifications" class="z_vault__settings_panel_sidebar-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px"
+                            fill="currentColor">
+                            <path
+                                d="M160-200v-66.67h80v-296q0-83.66 49.67-149.5Q339.33-778 420-796v-24q0-25 17.5-42.5T480-880q25 0 42.5 17.5T540-820v24q80.67 18 130.33 83.83Q720-646.33 720-562.67v296h80V-200H160Zm320-301.33ZM480-80q-33 0-56.5-23.5T400-160h160q0 33-23.5 56.5T480-80ZM306.67-266.67h346.66v-296q0-72-50.66-122.66Q552-736 480-736t-122.67 50.67q-50.66 50.66-50.66 122.66v296Z" />
+                        </svg>
+                        <span>Notifications</span>
+                    </div>
+                    <div data-section="about" class="z_vault__settings_panel_sidebar-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px"
+                            fill="currentColor">
+                            <path
+                                d="M448.67-280h66.66v-240h-66.66v240Zm31.32-316q15.01 0 25.18-9.97 10.16-9.96 10.16-24.7 0-15.3-10.15-25.65-10.16-10.35-25.17-10.35-15.01 0-25.18 10.35-10.16 10.35-10.16 25.65 0 14.74 10.15 24.7 10.16 9.97 25.17 9.97Zm.19 516q-82.83 0-155.67-31.5-72.84-31.5-127.18-85.83Q143-251.67 111.5-324.56T80-480.33q0-82.88 31.5-155.78Q143-709 197.33-763q54.34-54 127.23-85.5T480.33-880q82.88 0 155.78 31.5Q709-817 763-763t85.5 127Q880-563 880-480.18q0 82.83-31.5 155.67Q817-251.67 763-197.46q-54 54.21-127 85.84Q563-80 480.18-80Zm.15-66.67q139 0 236-97.33t97-236.33q0-139-96.87-236-96.88-97-236.46-97-138.67 0-236 96.87-97.33 96.88-97.33 236.46 0 138.67 97.33 236 97.33 97.33 236.33 97.33ZM480-480Z" />
+                        </svg>
+                        <span>About</span>
+                    </div>
+                </nav>
+                <main class="z_vault__settings_panel_content">
+
+                    <!-- General -->
+                    <section id="general" class="z_vault__settings_panel_section z_vault__active">
+                        <h3>General</h3>
+                        <div class="z_vault__settings_panel_card" style="--i: 1;">
+                            <div class="z_vault__settings_panel_item">
+                                <div>
+                                    <div class="z_vault__settings_panel_label">Vault Name</div>
+                                    <div class="z_vault__settings_panel_desc">Personalize your vault</div>
+                                </div>
+                                <input type="text" class="z_vault__settings_panel_input" value="My Secure Vault" />
+                            </div>
+                            <div class="z_vault__settings_panel_item">
+                                <div>
+                                    <div class="z_vault__settings_panel_label">Language</div>
+                                    <div class="z_vault__settings_panel_desc">Interface language</div>
+                                </div>
+                                <select class="z_vault__settings_panel_select">
+                                    <option>English (US)</option>
+                                    <option>English (UK)</option>
+                                    <option>Hindi</option>
+                                    <option>Bengali</option>
+                                    <option>Spanish</option>
+                                </select>
+                            </div>
+                            <div class="z_vault__settings_panel_item">
+                                <div>
+                                    <div class="z_vault__settings_panel_label">Date Format</div>
+                                </div>
+                                <select class="z_vault__settings_panel_select">
+                                    <option>DD/MM/YYYY</option>
+                                    <option>MM/DD/YYYY</option>
+                                    <option>YYYY-MM-DD</option>
+                                </select>
+                            </div>
+                            <div class="z_vault__settings_panel_item">
+                                <div>
+                                    <div class="z_vault__settings_panel_label">Auto-Lock Timer</div>
+                                    <div class="z_vault__settings_panel_desc">Lock after inactivity</div>
+                                </div>
+                                <select class="z_vault__settings_panel_select">
+                                    <option>1 minute</option>
+                                    <option selected>5 minutes</option>
+                                    <option>15 minutes</option>
+                                    <option>30 minutes</option>
+                                    <option>Never</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="z_vault__settings_panel_card" style="--i: 2;">
+                            <div class="z_vault__settings_panel_item">
+                                <div>
+                                    <div class="z_vault__settings_panel_label">Launch on Startup</div>
+                                </div>
+                                <label class="z_vault__settings_panel_toggle"><input type="checkbox" checked><span
+                                        class="z_vault__settings_panel_slider"></span></label>
+                            </div>
+                            <div class="z_vault__settings_panel_item">
+                                <div>
+                                    <div class="z_vault__settings_panel_label">Clipboard Auto-Clear</div>
+                                    <div class="z_vault__settings_panel_desc">Clear copied items after 30s</div>
+                                </div>
+                                <label class="z_vault__settings_panel_toggle"><input type="checkbox" checked><span
+                                        class="z_vault__settings_panel_slider"></span></label>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Security -->
+                    <section id="security" class="z_vault__settings_panel_section">
+                        <h3>Security</h3>
+                        <div class="z_vault__settings_panel_card" style="--i: 1;">
+                            <div class="z_vault__settings_panel_item">
+                                <div>
+                                    <div class="z_vault__settings_panel_label">Change Master Password</div>
+                                </div>
+                                <button class="z_vault__settings_panel_btn z_vault__settings_panel_btn-primary">Change
+                                    Password</button>
+                            </div>
+                            <div class="z_vault__settings_panel_item">
+                                <div>
+                                    <div class="z_vault__settings_panel_label">Two-Factor Authentication</div>
+                                </div>
+                                <label class="z_vault__settings_panel_toggle"><input type="checkbox"><span
+                                        class="z_vault__settings_panel_slider"></span></label>
+                            </div>
+                            <div class="z_vault__settings_panel_item">
+                                <div>
+                                    <div class="z_vault__settings_panel_label">Biometric Unlock</div>
+                                </div>
+                                <label class="z_vault__settings_panel_toggle"><input type="checkbox" checked><span
+                                        class="z_vault__settings_panel_slider"></span></label>
+                            </div>
+                        </div>
+                        <div class="z_vault__settings_panel_card" style="--i: 2;">
+                            <h4 style="font-size: 1.6rem; margin-bottom: 2rem; color: var(--z-vault-danger);">Danger
+                                Zone
+                            </h4>
+                            <div class="z_vault__settings_panel_item">
+                                <div>
+                                    <div class="z_vault__settings_panel_label" style="color: var(--z-vault-danger);">
+                                        Delete
+                                        All Data</div>
+                                    <div class="z_vault__settings_panel_desc">Permanently erase vault</div>
+                                </div>
+                                <button class="z_vault__settings_panel_btn"
+                                    style="background: var(--z-vault-danger); color: white;">Delete Vault</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Backup & Restore -->
+                    <section id="backup" class="z_vault__settings_panel_section">
+                        <h3>Backup</h3>
+                        <div class="z_vault__settings_panel_card" style="--i: 1;">
+                            <div style="display: flex; align-items: start; gap: 2.5rem;">
+                                <i class="fas fa-shield-check" style="font-size: 4rem; color: #818cf8;"></i>
+                                <div>
+                                    <h4 style="font-size: 2rem; margin-bottom: 1.2rem;">Automatic Cloud Backup</h4>
+                                    <p style="line-height: 1.8;">Your vault is automatically encrypted and backed up
+                                        daily
+                                        when connected to a cloud provider. End-to-end encrypted — only you hold the
+                                        keys.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4 style="font-size: 2.2rem; margin: 4rem 0 2.5rem;">Cloud Backup</h4>
+                        <div class="z_vault__settings_panel_grid">
+                            <div class="z_vault__settings_panel_card z_vault__settings_panel_provider-card"
+                                style="--i: 2;">
+                                <div
+                                    style="width: 110px; height: 110px; background: rgba(255,255,255,0.06); border-radius: 24px; margin: 0 auto 2.5rem; display: flex; align-items: center; justify-content: center;">
+                                    <img src="./assets/images/drive_logo.png" alt="Google Drive" style="width: 78px;" />
+                                </div>
+                                <h5 style="font-size: 1.7rem; margin-bottom: 1rem;">Google Drive</h5>
+                                <p style="margin-bottom: 2rem; color: var(--z-vault-text-muted);">Secure • Instant
+                                    Backup
+                                </p>
+                                <button id="z_vault__settings_google_drive_btn"
+                                    class="z_vault__settings_panel_btn z_vault__settings_panel_btn-primary">Start
+                                    Backup</button>
+                            </div>
+                            <div class="z_vault__settings_panel_card z_vault__settings_panel_provider-card"
+                                style="--i: 3;">
+                                <div
+                                    style="width: 110px; height: 110px; background: rgba(255,255,255,0.06); border-radius: 24px; margin: 0 auto 2.5rem; display: flex; align-items: center; justify-content: center;">
+                                    <img src="./assets/images/OneDrive.png" alt="Google Drive" style="width: 78px;" />
+                                </div>
+                                <h5 style="font-size: 1.7rem; margin-bottom: 1rem;">OneDrive</h5>
+                                <p style="margin-bottom: 2rem; color: var(--z-vault-text-muted);">Coming soon</p>
+                                <button class="z_vault__settings_panel_btn"
+                                    style="background:#374151;color:#94a3b8;cursor:not-allowed;">Coming Soon</button>
+                            </div>
+                            <div class="z_vault__settings_panel_card z_vault__settings_panel_provider-card">
+                                <div
+                                    style="width: 110px; height: 110px; background: rgba(255,255,255,0.06); border-radius: 24px; margin: 0 auto 2.5rem; display: flex; align-items: center; justify-content: center;">
+                                    <img src="./assets/images/dropbox.png" alt="Google Drive" style="width: 78px;" />
+                                </div>
+                                <h5 style="font-size: 1.7rem; margin-bottom: 1rem;">Dropbox</h5>
+                                <p style="margin-bottom: 2rem; color: var(--z-vault-text-muted);">Coming soon</p>
+                                <button class="z_vault__settings_panel_btn"
+                                    style="background:#374151;color:#94a3b8;cursor:not-allowed;">Coming Soon</button>
+                            </div>
+                        </div>
+
+                        <h4 style="font-size: 2.2rem; margin: 4rem 0 2.5rem;">Local Backup</h4>
+                        <div class="z_vault__settings_panel_grid">
+                            <div class="z_vault__settings_panel_card">
+                                <div
+                                    style="display: flex; align-items: center; justify-content: center; margin-bottom: 2.5rem; gap: 5px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                        style="font-size: 4rem; color: var(--z-vault-success);" height="40px"
+                                        viewBox="0 -960 960 960" width="40px" fill="currentcolor">
+                                        <path
+                                            d="M440-160v-326L336-382l-56-58 200-200 200 200-56 58-104-104v326h-80ZM160-600v-120q0-33 23.5-56.5T240-800h480q33 0 56.5 23.5T800-720v120h-80v-120H240v120h-80Z" />
+                                    </svg>
+                                    <div>
+                                        <h5 style="font-size: 2rem;">Export Vault</h5>
+                                        <p style="color: var(--z-vault-text-muted);">Encrypted offline backup</p>
+                                    </div>
+                                </div>
+                                <div
+                                    style="display: flex; align-items: center; justify-content: center; margin-bottom: 2.5rem;">
+                                    <button class="z_vault__settings_panel_btn z_vault__settings_panel_btn-success"
+                                        id="z_vault__settings_panel_export_btn">Export Vault</button>
+                                </div>
+                            </div>
+                            <div class="z_vault__settings_panel_card">
+
+                                <div
+                                    style="display: flex; align-items: center; justify-content: center; margin-bottom: 2.5rem; gap: 5px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                        style="font-size: 4rem; color: var(--z-vault-accent);" height="40px"
+                                        viewBox="0 -960 960 960" width="40px" fill="currentcolor">
+                                        <path
+                                            d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z" />
+                                    </svg>
+                                    <div>
+                                        <h5 style="font-size: 2rem;">Import Vault</h5>
+                                        <p style="color: var(--z-vault-text-muted);">Restore from file</p>
+                                    </div>
+                                </div>
+                                <div
+                                    style="display: flex; align-items: center; justify-content: center; margin-bottom: 2.5rem;">
+                                    <button class="z_vault__settings_panel_btn z_vault__settings_panel_btn-primary"
+                                        id="z_vault__settings_panel_import_btn">Choose
+                                        Backup File</button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Appearance -->
+                    <section id="appearance" class="z_vault__settings_panel_section">
+                        <h3>Appearance</h3>
+                        <div class="z_vault__settings_panel_card" style="--i: 1;">
+                            <div class="z_vault__settings_panel_item">
+                                <div>
+                                    <div class="z_vault__settings_panel_label">Theme</div>
+                                </div>
+                                <select class="z_vault__settings_panel_select">
+                                    <option>Dark (Default)</option>
+                                    <option>Light</option>
+                                    <option>System</option>
+                                </select>
+                            </div>
+                            <div class="z_vault__settings_panel_item">
+                                <div>
+                                    <div class="z_vault__settings_panel_label">Accent Color</div>
+                                </div>
+                                <select class="z_vault__settings_panel_select">
+                                    <option selected>Indigo</option>
+                                    <option>Blue</option>
+                                    <option>Purple</option>
+                                    <option>Green</option>
+                                </select>
+                            </div>
+                            <div class="z_vault__settings_panel_item">
+                                <div>
+                                    <div class="z_vault__settings_panel_label">Font Size</div>
+                                </div>
+                                <select class="z_vault__settings_panel_select">
+                                    <option>Small</option>
+                                    <option selected>Medium</option>
+                                    <option>Large</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="z_vault__settings_panel_card" style="--i: 2;">
+                            <div class="z_vault__settings_panel_item">
+                                <div>
+                                    <div class="z_vault__settings_panel_label">Compact Mode</div>
+                                </div>
+                                <label class="z_vault__settings_panel_toggle"><input type="checkbox"><span
+                                        class="z_vault__settings_panel_slider"></span></label>
+                            </div>
+                            <div class="z_vault__settings_panel_item">
+                                <div>
+                                    <div class="z_vault__settings_panel_label">Show Password Strength</div>
+                                </div>
+                                <label class="z_vault__settings_panel_toggle"><input type="checkbox" checked><span
+                                        class="z_vault__settings_panel_slider"></span></label>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Notifications -->
+                    <section id="notifications" class="z_vault__settings_panel_section">
+                        <h3>Notifications</h3>
+                        <div class="z_vault__settings_panel_card" style="--i: 1;">
+                            <div class="z_vault__settings_panel_item">
+                                <div>
+                                    <div class="z_vault__settings_panel_label">Push Notifications</div>
+                                    <div class="z_vault__settings_panel_desc">Receive alerts on your device</div>
+                                </div>
+                                <label class="z_vault__settings_panel_toggle"><input type="checkbox" checked><span
+                                        class="z_vault__settings_panel_slider"></span></label>
+                            </div>
+                            <div class="z_vault__settings_panel_item">
+                                <div>
+                                    <div class="z_vault__settings_panel_label">Email Notifications</div>
+                                    <div class="z_vault__settings_panel_desc">Get updates via email</div>
+                                </div>
+                                <label class="z_vault__settings_panel_toggle"><input type="checkbox"><span
+                                        class="z_vault__settings_panel_slider"></span></label>
+                            </div>
+                            <div class="z_vault__settings_panel_item">
+                                <div>
+                                    <div class="z_vault__settings_panel_label">Security Alerts</div>
+                                    <div class="z_vault__settings_panel_desc">Notify on suspicious activity</div>
+                                </div>
+                                <label class="z_vault__settings_panel_toggle"><input type="checkbox" checked><span
+                                        class="z_vault__settings_panel_slider"></span></label>
+                            </div>
+                        </div>
+                        <div class="z_vault__settings_panel_card" style="--i: 2;">
+                            <h4 style="font-size: 1.6rem; margin-bottom: 2rem;">Notification Preferences</h4>
+                            <div class="z_vault__settings_panel_item">
+                                <div>
+                                    <div class="z_vault__settings_panel_label">Backup Reminders</div>
+                                    <div class="z_vault__settings_panel_desc">Remind to backup vault weekly</div>
+                                </div>
+                                <label class="z_vault__settings_panel_toggle"><input type="checkbox" checked><span
+                                        class="z_vault__settings_panel_slider"></span></label>
+                            </div>
+                            <div class="z_vault__settings_panel_item">
+                                <div>
+                                    <div class="z_vault__settings_panel_label">Password Health</div>
+                                    <div class="z_vault__settings_panel_desc">Alert about weak/reused passwords</div>
+                                </div>
+                                <label class="z_vault__settings_panel_toggle"><input type="checkbox" checked><span
+                                        class="z_vault__settings_panel_slider"></span></label>
+                            </div>
+                            <div class="z_vault__settings_panel_item">
+                                <div>
+                                    <div class="z_vault__settings_panel_label">New Device Login</div>
+                                    <div class="z_vault__settings_panel_desc">Notify when logging in from new device
+                                    </div>
+                                </div>
+                                <label class="z_vault__settings_panel_toggle"><input type="checkbox" checked><span
+                                        class="z_vault__settings_panel_slider"></span></label>
+                            </div>
+                            <div class="z_vault__settings_panel_item">
+                                <div>
+                                    <div class="z_vault__settings_panel_label">App Updates</div>
+                                    <div class="z_vault__settings_panel_desc">Notify about new versions</div>
+                                </div>
+                                <label class="z_vault__settings_panel_toggle"><input type="checkbox"><span
+                                        class="z_vault__settings_panel_slider"></span></label>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- About -->
+                    <section id="about" class="z_vault__settings_panel_section">
+                        <h3>About</h3>
+                        <div class="z_vault__settings_panel_card" style="--i: 1; text-align: center; padding: 5rem;">
+                            <h4 style="font-size: 2.5rem; margin-bottom: 1.5rem;">Secure Vault</h4>
+                            <p style="font-size: 1.4rem; color: var(--z-vault-text-muted); margin-bottom: 3rem;">Version
+                                2.8.1</p>
+                            <p style="line-height: 2; max-width: 800px; margin: 0 auto; font-size: 1.2rem;">
+                                A modern, privacy-first password & secrets manager.<br>
+                                End-to-end encrypted • Open-source core • Built for power users.
+                            </p>
+                            <div style="margin-top: 4rem;">
+                                <p style="font-size: 1.1rem;">Made with ❤️ in India</p>
+                                <p style="margin-top: 1.5rem; font-size: 0.95rem; color: var(--z-vault-text-muted);">
+                                    © 2026 Secure Vault. All rights reserved.
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+
+                </main>
+            </div>
+        </div>
+    </div>
+    <!-- cloud backup found modal -->
+    <div id="z_vault__startup_cloud_backup_overlay">
+        <div class="z_vault__startup_cloud_backup_modal">
+            <div class="z_vault__startup_cloud_backup_card">
+                <!-- Initial cloud backup View -->
+                <div id="z_vault__startup_cloud_backup_initial_view">
+                    <div class="z_vault__startup_cloud_backup_icon-wrapper">
+                        <div class="z_vault__startup_cloud_backup_icon">☁️</div>
+                    </div>
+
+                    <h2 class="z_vault__startup_cloud_backup_title">Backup Found</h2>
+                    <p class="z_vault__startup_cloud_backup_message">
+                        We found old backup in your cloud drive do you want to use it?
+                    </p>
+
+                    <div class="z_vault__startup_cloud_backup_actions">
+                        <button class="z_vault__startup_cloud_backup_button"
+                            id="z_vault__startup_cloud_backup_button_skip" onclick="showWarning()">
+                            <span>
+                                <span>✕</span>
+                                <span>Skip</span>
+                            </span>
+                        </button>
+                        <button class="z_vault__startup_cloud_backup_button"
+                            id="z_vault__startup_cloud_backup_button_import">
+                            <span>
+                                <span>✓</span>
+                                <span>Yes</span>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+                <!-- Backups List View -->
+                <div id="z_vault__startup_cloudbackup__backups_view">
+                    <div class="z_vault__startup_cloudbackup__backups-header">
+                        <button id="z_vault__startup_cloudbackup__backups-back_btn">
+                            ←
+                        </button>
+                        <h2 class="z_vault__startup_cloudbackup__backups-title">Select Backup</h2>
+                    </div>
+
+                    <div id="z_vault__startup_cloudbackup__backups_list"></div>
+
+                    <div class="z_vault__startup_cloudbackup__backups-footer">
+                        <button class="z_vault__startup_cloudbackup__button"
+                            id="z_vault__startup_cloudbackup__button_skip">
+                            <span>
+                                <span>✕</span>
+                                <span>Cancel</span>
+                            </span>
+                        </button>
+                        <button class="z_vault__startup_cloudbackup__button"
+                            id="z_vault__startup_cloudbackup__button_import" disabled>
+                            <span>
+                                <span>✓</span>
+                                <span>Restore</span>
+                            </span>
+                        </button>
+                    </div>
+                </div>
+                <!-- Warning Modal -->
+            </div>
+        </div>
+    </div>
+    <!-- Warning Modal Overlay -->
+    <div id="z_vault__warning_overlay">
+        <div class="z_vault__warning_modal">
+            <div class="z_vault__warning_icon">⚠️</div>
+
+            <h2 class="z_vault__warning_title">Vault Already Exists</h2>
+            <p class="z_vault__warning_message">
+                A vault file already exists on this device. Starting a new vault will <span
+                    class="z_vault__warning_highlight">permanently delete</span> your existing vault and all its data.
+                This action cannot be undone.
+            </p>
+
+            <div class="z_vault__warning_actions">
+                <button class="z_vault__warning_button z_vault__warning_button-cancel" onclick="cancelNewVault()">
+                    <span>
+                        <span>✕</span>
+                        <span>Cancel</span>
+                    </span>
+                </button>
+                <button class="z_vault__warning_button z_vault__warning_button-confirm" onclick="confirmNewVault()">
+                    <span>
+                        <span>⚡</span>
+                        <span>Start New</span>
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- data sync master password prompt -->
+    <div class="z_vault__data_sync__modal_overlay" id="z_vault__data_sync__modalOverlay">
+        <div class="z_vault__data_sync__modal">
+            <h2>Enter Master Password</h2>
+            <p class="z_vault__data_sync__subtitle">
+                To securely sync your data, please enter your master password.
+            </p>
+
+            <div id="z_vault__data_sync__error" class="z_vault__data_sync__error"></div>
+
+            <input type="password" id="z_vault__data_sync__password" class="z_vault__data_sync__password-input"
+                placeholder="Master password" autocomplete="off" spellcheck="false" />
+
+            <div class="z_vault__data_sync__buttons">
+                <button id="z_vault__data_sync__cancel"
+                    class="z_vault__data_sync__btn z_vault__data_sync__cancel">Cancel</button>
+                <button id="z_vault__data_sync__submit"
+                    class="z_vault__data_sync__btn z_vault__data_sync__submit">Sync</button>
+            </div>
+        </div>
+    </div>
+    <!-- <script src="./renderer.js"></script> -->
+    <script src="../../dist/renderer/renderer.js"></script>
+</body>
+
+</html>

@@ -24,10 +24,12 @@ import argon2 from "@node-rs/argon2";
 import { drive_v3, drive as googleDrive } from "@googleapis/drive";
 import { OAuth2Client } from "google-auth-library";
 import AdmZip from "adm-zip";
+import { DataTables, DataType, NewPassword, NewText, PasswordDetails, TextDetails } from "../shared/api.types";
 
-const credentials: any = fs.readFileSync(path.join(__dirname, "../../credential.env"), "utf8");
-const CLIENT_ID = credentials["CLIENT_ID"];
-const CLIENT_SECRET = credentials["CLIENT_SECRET"];
+const rawCredentials: any = fs.readFileSync(path.join(__dirname, "../../credential.env"), "utf8");
+const credential: {CLIENT_ID: string, CLIENT_SECRET: string} = JSON.parse(rawCredentials)
+const CLIENT_ID = credential.CLIENT_ID;
+const CLIENT_SECRET = credential.CLIENT_SECRET;
 const REDIRECT_URI = 'http://localhost';
 const SCOPES = ["https://www.googleapis.com/auth/drive.file"];
 const USER_DATA_PATH = app.getPath("userData");
@@ -108,15 +110,8 @@ function createWindow() {
             });
     } else {
         // In development, load from src folder
-        const rendererPath = path.join(
-            __dirname,
-            "..",
-            "..",
-            "src",
-            "renderer",
-            "index.html",
-        );
-        mainWindow.loadFile(rendererPath).catch((err) => {
+        const rendererURL = "http://localhost:5173/";
+        mainWindow.loadURL(rendererURL).catch((err) => {
             console.log(err);
         });
 
@@ -135,7 +130,7 @@ app.whenReady().then(() => {
     ipcMain.handle("decryptSensitiveData", decryptSensitiveData);
     ipcMain.handle("fetchData", fetchData);
     // ipcMain.handle("connectToCloud", connectToCloud);
-    ipcMain.handle("importBackup", importGDriveData);
+    ipcMain.handle("importCloudBackup", importGDriveData);
     ipcMain.handle("checkExistingBackup", checkExistingBackup);
     ipcMain.handle("checkTokenValidity", checkTokenValidity);
     ipcMain.handle("openLocalBackup", openLocalBackup);
