@@ -10,7 +10,7 @@ export default function Background({ children }: ChildrenProps) {
           "bg-[linear-gradient(to_bottom_right,var(--z-vault-bg-gradient))]",
         ].join(" ")}
       ></div>
-      <div className="relative z-10 h-full w-full text-white">{children}</div>
+      <div className="relative flex z-10 h-full w-full text-white">{children}</div>
     </>
   );
 }
