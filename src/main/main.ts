@@ -429,7 +429,7 @@ async function addNewData(
                 const sensitivePasswordData = {
                     usernameOrEmail: data.usernameOrEmail,
                     password: data.password,
-                    note: data.note,
+                    note: data.note ?? "",
                 };
                 // need to add validation before storing into database
                 const encryptedPasswordMetadata = encryptData(

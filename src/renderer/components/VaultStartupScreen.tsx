@@ -59,28 +59,33 @@ function FadeUp({ visible, children, className = "" }: FadeUpProps) {
 // }
 
 export function VaultStartupScreen() {
-  const [isLoading, setIsLoading] = useState<{type: VaultButtonVariant, state: boolean}>({type: "ghost", state: false});
+  const { canGoBack, goBack, navigate, replaceScreen, setNavigationData } =
+    useContext(NavigationContext);
+  const [isLoading, setIsLoading] = useState<{ type: VaultButtonVariant, state: boolean }>({ type: "ghost", state: false });
   useEffect(() => {
     const checkVaultStatus = async () => {
       const existStatusResponse = await window.electronAPI.vaultExistStatus();
       console.log(existStatusResponse);
-      if(existStatusResponse){
-        replaceScreen("unlock");
-      }else {
+      if (existStatusResponse) {
+        // replaceScreen("unlock");
+        // need to remove following line
+        const unlockResponse = await window.electronAPI.unlockVault("Password@1234");
+        setNavigationData(unlockResponse);
+        // ============ +++++++++++ ============ //
+        replaceScreen("vault");
+      } else {
         navigate("startup");
       }
     };
     checkVaultStatus();
   }, []);
   const isVisible = useStagger(7, 90);
-  const { canGoBack, goBack, navigate, replaceScreen, setNavigationData } =
-    useContext(NavigationContext);
 
   const handelGoogleBackup = async () => {
-    setIsLoading({type: "ghost", state: true});
+    setIsLoading({ type: "ghost", state: true });
     const existingBackupResponse =
       await window.electronAPI.checkExistingBackup();
-      setIsLoading({type: "ghost", state: false});
+    setIsLoading({ type: "ghost", state: false });
     if (existingBackupResponse.isBackupPresent) {
       navigate("backup_action");
       setNavigationData(existingBackupResponse.data)
@@ -89,10 +94,10 @@ export function VaultStartupScreen() {
   };
 
   const handelLocalBackup = async () => {
-    setIsLoading({type: "outline", state: true});
+    setIsLoading({ type: "outline", state: true });
     const localBackupResponse = await window.electronAPI.openLocalBackup();
-    setIsLoading({type: "outline", state: true});
-    if(localBackupResponse.success){
+    setIsLoading({ type: "outline", state: true });
+    if (localBackupResponse.success) {
       navigate("unlock");
     }
   };
@@ -158,7 +163,7 @@ export function VaultStartupScreen() {
                 primaryIcon={<GoogleIcon />}
                 label="Sign in to use cloud backup file"
                 onClick={() => handelGoogleBackup()}
-                secondaryIcon={isLoading.type === "ghost" && isLoading.state && <LoadingIcon/>}
+                secondaryIcon={isLoading.type === "ghost" && isLoading.state && <LoadingIcon />}
                 disabled={isLoading.state}
               />
             </FadeUp>
@@ -170,7 +175,7 @@ export function VaultStartupScreen() {
                 primaryIcon={<span className="text-base leading-none">💾</span>}
                 label="I have local backup file"
                 onClick={() => handelLocalBackup()}
-                secondaryIcon={isLoading.type === "outline" && isLoading.state && <LoadingIcon/>}
+                secondaryIcon={isLoading.type === "outline" && isLoading.state && <LoadingIcon />}
                 disabled={isLoading.state}
               />
             </FadeUp>
@@ -182,7 +187,7 @@ export function VaultStartupScreen() {
                 primaryIcon={<span className="text-base leading-none">✨</span>}
                 label="Open new vault"
                 onClick={handleNewVaultCreation}
-                secondaryIcon={isLoading.type === "primary" && isLoading.state && <LoadingIcon/>}
+                secondaryIcon={isLoading.type === "primary" && isLoading.state && <LoadingIcon />}
                 disabled={isLoading.state}
               />
             </FadeUp>

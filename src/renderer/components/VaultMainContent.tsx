@@ -129,7 +129,7 @@ function RenderPassword({ rows }: { rows: PasswordDetails[] }) {
                                 </div>
                             </div>
 
-                            <div className="w-full mt-auto flex items-end justify-between relative">
+                            <div className="w-full mt-auto flex items-center justify-between relative">
                                 <a href="https://netflix.com" className="flex items-center gap-1.5 text-sm font-semibold text-blue-500 hover:text-blue-400 transition-colors">
                                     Visit website
                                     <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"></path></svg>
@@ -248,7 +248,7 @@ function RenderTexts({ rows }: { rows: TextDetails[] }) {
 export function VaultMainContent() {
 
     return (
-        <div className="max-w-300 mx-auto space-y-6 mt-6">
+        <div className="max-w-300 mx-auto px-4 space-y-6 mt-6">
             <div className="flex flex-col md:flex-row gap-4 mb-8">
                 <div className="relative flex-1">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500">
