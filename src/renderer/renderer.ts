@@ -348,8 +348,8 @@ const deleteData = async (passwordId: string) => {
     await renderPagination(afterDeleteResult.totalEntries);
 }
 
-async function getSensitiveData(id: string) {
-    const decryptedData = await window.electronAPI.decryptSensitiveData(id, currentActiveDataType);
+async function getSensitivePasswordData(id: string) {
+    const decryptedData = await window.electronAPI.decryptSensitivePasswordData(id, currentActiveDataType);
     return JSON.parse(decryptedData);
 }
 
@@ -362,13 +362,13 @@ function resetInputElements(inputElements: (HTMLInputElement | HTMLSelectElement
 function changeShowHideBtnState(
     showHideElement: HTMLElement,
     showHideIconContainer: HTMLElement,
-    sensitiveData: SensitiveData,
+    SensitivePasswordData: SensitivePasswordData,
     eleType: 'username' | 'password'
 ) {
     const showHideElementType = showHideElement.dataset.type;
     showHideIconContainer.innerHTML = ""
     if (showHideElementType === "dot") {
-        showHideElement.innerText = (eleType === 'username' ? sensitiveData.usernameOrEmail : sensitiveData.password);
+        showHideElement.innerText = (eleType === 'username' ? SensitivePasswordData.usernameOrEmail : SensitivePasswordData.password);
         showHideIconContainer.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="width: 1rem; height: 1rem"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M6.873 17.129c-1.845-1.31-3.305-3.014-4.13-4.09a1.693 1.693 0 0 1 0-2.077C4.236 9.013 7.818 5 12 5c1.876 0 3.63.807 5.13 1.874"/><path d="M14.13 9.887a3 3 0 1 0-4.243 4.242M4 20L20 4M10 18.704A7.124 7.124 0 0 0 12 19c4.182 0 7.764-4.013 9.257-5.962a1.694 1.694 0 0 0-.001-2.078A22.939 22.939 0 0 0 19.57 9"/></g></svg>`;
         showHideElement.dataset.type = "text";
     } else {
@@ -378,9 +378,9 @@ function changeShowHideBtnState(
     }
 }
 
-async function changeCopyBtnState(copyIconContainer: HTMLElement, sensitiveData: SensitiveData, eleType: 'username' | 'password') {
+async function changeCopyBtnState(copyIconContainer: HTMLElement, SensitivePasswordData: SensitivePasswordData, eleType: 'username' | 'password') {
     let timeoutId: any;
-    await navigator.clipboard.writeText(eleType === 'username' ? sensitiveData.usernameOrEmail : sensitiveData.password);
+    await navigator.clipboard.writeText(eleType === 'username' ? SensitivePasswordData.usernameOrEmail : SensitivePasswordData.password);
     copyIconContainer.innerHTML = "";
     copyIconContainer.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 48 48" style="width: 1rem; height: 1rem"><path fill="none" stroke="#209400" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="m4 24l5-5l10 10L39 9l5 5l-25 25L4 24Z" clip-rule="evenodd"/></svg>`;
     timeoutId = setTimeout(() => {
@@ -404,7 +404,7 @@ const renderPasswords = (passwords: PasswordDetails[]) => {
     noDataFoundElement.innerHTML = "";
     if (passwords.length) {
         passwords.forEach(password => {
-            let sensitiveData: SensitiveData | null = null;
+            let SensitivePasswordData: SensitivePasswordData | null = null;
             const passwordListItem = document.createElement("div");
             passwordListItem.classList.add("z_vault__main_password_list_item");
             passwordListItem.innerHTML = `
@@ -587,9 +587,9 @@ const renderPasswords = (passwords: PasswordDetails[]) => {
             });
             seeNotesBtn?.addEventListener("click", async () => {
                 currentActiveDataType = "password";
-                sensitiveData = sensitiveData ?? await getSensitiveData(password.id);
-                if (passwordNoteContentElement && sensitiveData?.note) {
-                    passwordNoteContentElement.innerText = sensitiveData.note;
+                SensitivePasswordData = SensitivePasswordData ?? await getSensitivePasswordData(password.id);
+                if (passwordNoteContentElement && SensitivePasswordData?.note) {
+                    passwordNoteContentElement.innerText = SensitivePasswordData.note;
                 }
                 cardElement?.classList.toggle("is-flipped");
             });
@@ -605,37 +605,37 @@ const renderPasswords = (passwords: PasswordDetails[]) => {
                 editPasswordBtn?.nextElementSibling?.classList.toggle('active_menu');
             });
             showUsernameBtn?.addEventListener("click", async () => {
-                sensitiveData = sensitiveData ?? await getSensitiveData(password.id);
-                if (sensitiveData) {
-                    changeShowHideBtnState(mainUsernameElement, usernameShowHideIconContainer, sensitiveData, 'username');
+                SensitivePasswordData = SensitivePasswordData ?? await getSensitivePasswordData(password.id);
+                if (SensitivePasswordData) {
+                    changeShowHideBtnState(mainUsernameElement, usernameShowHideIconContainer, SensitivePasswordData, 'username');
                 }
             });
             showPasswordBtn?.addEventListener("click", async () => {
-                sensitiveData = sensitiveData ?? await getSensitiveData(password.id);
-                if (sensitiveData) {
-                    changeShowHideBtnState(mainPasswordElement, passwordShowHideIconContainer, sensitiveData, 'password');
+                SensitivePasswordData = SensitivePasswordData ?? await getSensitivePasswordData(password.id);
+                if (SensitivePasswordData) {
+                    changeShowHideBtnState(mainPasswordElement, passwordShowHideIconContainer, SensitivePasswordData, 'password');
                 }
             });
             copyUsernameBtn?.addEventListener("click", async () => {
-                sensitiveData = sensitiveData ?? await getSensitiveData(password.id);
-                if (sensitiveData) {
-                    await changeCopyBtnState(usernameCopyIconContainer, sensitiveData, 'username');
+                SensitivePasswordData = SensitivePasswordData ?? await getSensitivePasswordData(password.id);
+                if (SensitivePasswordData) {
+                    await changeCopyBtnState(usernameCopyIconContainer, SensitivePasswordData, 'username');
                 }
             });
             copyPasswordBtn?.addEventListener("click", async () => {
-                sensitiveData = sensitiveData ?? await getSensitiveData(password.id);
-                if (sensitiveData) {
-                    await changeCopyBtnState(passwordCopyIconContainer, sensitiveData, 'password');
+                SensitivePasswordData = SensitivePasswordData ?? await getSensitivePasswordData(password.id);
+                if (SensitivePasswordData) {
+                    await changeCopyBtnState(passwordCopyIconContainer, SensitivePasswordData, 'password');
                 }
             });
             passwordEditBtn?.addEventListener("click", async () => {
                 addModalBackdrop.classList.add("z_vault__open");
                 addModal.classList.add("z_vault__open");
-                sensitiveData = sensitiveData ?? await getSensitiveData(password.id);
+                SensitivePasswordData = SensitivePasswordData ?? await getSensitivePasswordData(password.id);
                 currentActiveDataType = "password";
-                password.usernameOrEmail = sensitiveData?.usernameOrEmail ?? "";
-                password.password = sensitiveData?.password ?? "";
-                password.note = sensitiveData?.note ?? "";
+                password.usernameOrEmail = SensitivePasswordData?.usernameOrEmail ?? "";
+                password.password = SensitivePasswordData?.password ?? "";
+                password.note = SensitivePasswordData?.note ?? "";
                 editPassword(password);
             });
             passwordDeleteBtn?.addEventListener("click", async () => {

@@ -27,7 +27,7 @@ import AdmZip from "adm-zip";
 import { DataTables, DataType, NewPassword, NewText, PasswordDetails, TextDetails } from "../shared/api.types";
 
 const rawCredentials: any = fs.readFileSync(path.join(__dirname, "../../credential.env"), "utf8");
-const credential: {CLIENT_ID: string, CLIENT_SECRET: string} = JSON.parse(rawCredentials)
+const credential: { CLIENT_ID: string, CLIENT_SECRET: string } = JSON.parse(rawCredentials)
 const CLIENT_ID = credential.CLIENT_ID;
 const CLIENT_SECRET = credential.CLIENT_SECRET;
 const REDIRECT_URI = 'http://localhost';
@@ -110,7 +110,7 @@ function createWindow() {
             });
     } else {
         // In development, load from src folder
-        const rendererURL = "http://localhost:5173/";
+        const rendererURL = "http://localhost:4200/";
         mainWindow.loadURL(rendererURL).catch((err) => {
             console.log(err);
         });
@@ -361,9 +361,8 @@ async function unlockVault(_event: IpcMainInvokeEvent, password: string) {
         if (!dbConnection) {
             await initializeDbConnection(vaultDEK.toString("hex"));
         }
-        return await getTableData("accounts", "id", 1, 10, "ASC");
+        return {success: true, message: 'Authentication successful'};
     } catch (error) {
-        // await dbConnection.run(`DETACH vault`)
         if (dbConnection) {
             dbConnection.closeSync();
             dbConnection = null;
@@ -397,7 +396,7 @@ async function decryptSensitiveData(
             );
             const resultAsJson = await resultAsPromise.getRowObjectsJson();
             const result = resultAsJson[0];
-            return decryptData(
+            const decryptedData = decryptData(
                 String(result.iv),
                 String(result.tag),
                 String(result.encrypted_data),
@@ -405,6 +404,7 @@ async function decryptSensitiveData(
                 "hex",
                 "utf8",
             );
+            return decryptedData;
         } else {
             throw new Error(
                 "DB connection or VaultDEK not found in decryptSensitiveData",
@@ -677,7 +677,9 @@ async function fetchData(
 async function importGDriveData(_event: IpcMainInvokeEvent, masterPassword: string): Promise<{ success: boolean, message: string }> {
     try {
         const auth = await getGoogleAuthClient();
-        const drive = googleDrive({ version: "v3", auth });
+        // auth may come from a different installed copy of google-auth-library
+        // Cast to any to avoid incompatible OAuth2Client types across packages
+        const drive = googleDrive({ version: "v3", auth: auth as unknown as any });
         const folderId = await getOrCreateBackupFolder(drive);
         // List existing backups (newest first)
         const backups = await listBackups(drive, folderId);
@@ -990,7 +992,7 @@ function getRandomFileName() {
 async function backupToDrive(): Promise<{ success: boolean, message: string }> {
     try {
         const auth = await getGoogleAuthClient();
-        const drive = googleDrive({ version: "v3", auth });
+        const drive = googleDrive({ version: "v3", auth: auth as unknown as any });
         const folderId = await getOrCreateBackupFolder(drive);
         if (dbConnection) {
             dbConnection.closeSync();
@@ -1237,7 +1239,7 @@ async function replaceLocalFileWithCloud(
 async function checkExistingBackup(_event: IpcMainInvokeEvent): Promise<{ isBackupPresent: boolean, data: drive_v3.Schema$File[] | null, message: string }> {
     try {
         const auth = await getGoogleAuthClient();
-        const drive = googleDrive({ version: "v3", auth });
+        const drive = googleDrive({ version: "v3", auth: auth as unknown as any });
         // List existing backups (newest first)
         const folderId = await getOrCreateBackupFolder(drive);
         const backups = await listBackups(drive, folderId);
@@ -1276,7 +1278,7 @@ async function openLocalBackup(): Promise<{ success: boolean, message: string }>
             return new Promise((resolve, reject) => {
                 zip.extractAllToAsync(USER_DATA_PATH, false, true, async (error) => {
                     await fs.promises.unlink(VAULT_COPY_PATH);
-                    resolve({success: true, message: "Backup imported successfully!"});
+                    resolve({ success: true, message: "Backup imported successfully!" });
                     if (error) {
                         reject(error);
                     }
@@ -1295,26 +1297,26 @@ async function openLocalBackup(): Promise<{ success: boolean, message: string }>
 }
 
 async function openCloudBackup(
-    _event: Electron.IpcMainInvokeEvent, 
-    backupFileId: string, 
+    _event: Electron.IpcMainInvokeEvent,
+    backupFileId: string,
     backupFileName: string
 ): Promise<{ success: boolean, message: string }> {
     try {
         const auth = await getGoogleAuthClient();
-        const drive = googleDrive({ version: "v3", auth });
+        const drive = googleDrive({ version: "v3", auth: auth as unknown as any });
         const downloadLocation = await downloadBackupFile(drive, backupFileId, backupFileName);
         const zip = new AdmZip(downloadLocation);
         return new Promise((resolve, reject) => {
             zip.extractAllToAsync(USER_DATA_PATH, true, false, async (error) => {
                 await fs.promises.unlink(downloadLocation);
-                resolve({success: true, message: "Backup import successful!"});
-                if(error){
+                resolve({ success: true, message: "Backup import successful!" });
+                if (error) {
                     reject(error);
                 }
             });
         })
     } catch (error) {
-        return await handelError(error, "Import", "@openCloudBackup", "Backup import failed!");   
+        return await handelError(error, "Import", "@openCloudBackup", "Backup import failed!");
     }
 }
 

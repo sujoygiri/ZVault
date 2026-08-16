@@ -1,0 +1,184 @@
+<div class="w-screen h-screen flex items-center justify-center relative bg-slate-950 overflow-hidden">
+  
+  <!-- BACKGROUND IMAGE / GRAPHICS -->
+  <div class="absolute inset-0 overflow-hidden bg-radial-(circle at 12% 20%,rgba(6,182,212,0.10),transparent_40%) bg-radial-(circle at 88% 75%,rgba(99,102,241,0.10),transparent_40%) pointer-events-none select-none">
+    <svg width="500" height="500" viewBox="0 0 500 500" class="-top-10 -left-10 absolute opacity-[0.35]">
+      <g stroke="#06b6d4" stroke-width="1.5" fill="none">
+        <path d="M0 120 H120 V220 H260" />
+        <path d="M0 260 H60 V340 H180 V420" />
+        <path d="M40 0 V80 H160 V40" />
+        <circle cx="120" cy="220" r="4" fill="#06b6d4" />
+        <circle cx="260" cy="220" r="4" fill="#06b6d4" />
+        <circle cx="180" cy="420" r="4" fill="#06b6d4" />
+        <circle cx="160" cy="40" r="4" fill="#06b6d4" />
+      </g>
+    </svg>
+    <svg width="500" height="500" viewBox="0 0 500 500" class="-bottom-10 -right-10 absolute opacity-[0.35]">
+      <g stroke="#6366f1" stroke-width="1.5" fill="none">
+        <path d="M500 120 H380 V220 H240" />
+        <path d="M500 260 H440 V340 H320 V420" />
+        <path d="M460 0 V80 H340 V40" />
+        <circle cx="380" cy="220" r="4" fill="#6366f1" />
+        <circle cx="240" cy="220" r="4" fill="#6366f1" />
+        <circle cx="320" cy="420" r="4" fill="#6366f1" />
+        <circle cx="340" cy="40" r="4" fill="#6366f1" />
+      </g>
+    </svg>
+  </div>
+
+  @if (isVaultExist) {
+  <!-- WHEN VAULT EXISTS -->
+  <div class="relative w-full sm:w-105 rounded-2xl border border-z-border bg-slate-400/30 backdrop-blur-xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.6)] px-8 pt-9 pb-8">
+    <div class="w-full h-20 flex items-center justify-center py-4">
+      <div class="w-14 h-14 rounded-2xl bg-linear-to-br from-cyan-800/60 to-cyan-600/60 flex items-center justify-center border border-cyan-500/20 shadow-[0_0_20px_rgba(6,182,212,0.15)]">
+        <!-- verified_user SVG -->
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-7 h-7 text-cyan-400">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+        </svg>
+      </div>
+    </div>
+    
+    <!-- Heading -->
+    <h1 class="text-white text-[19px] font-semibold text-center mb-6 tracking-wide">Secure Your Digital Assets</h1>
+    
+    <!-- Auth Form -->
+    <form class="w-full flex flex-col gap-4" [formGroup]="unlockVaultForm" (ngSubmit)="handleVaultUnlock()">
+      <div class="relative flex flex-col">
+        <label class="text-xs text-slate-300 font-medium mb-1.5 pl-1">Master Password</label>
+        <div class="relative">
+          <!-- lock prefix icon -->
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+            </svg>
+          </div>
+          
+          <input [type]="passwordVisibilityState ? 'text' : 'password'" [required]="true" formControlName="masterPassword" placeholder="••••••••••••" class="w-full bg-slate-950/50 border border-slate-700/50 rounded-xl pl-10 pr-10 py-3 text-white text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/20 transition-all placeholder-slate-500 shadow-inner">
+          
+          <!-- visibility suffix toggle button -->
+          <button type="button" (click)="showHidePassword()" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-200 transition">
+            @if (passwordVisibilityState) {
+              <!-- visibility_off SVG -->
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+              </svg>
+            } @else {
+              <!-- visibility SVG -->
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            }
+          </button>
+        </div>
+      </div>
+      
+      <button type="submit" class="w-full mt-2 border border-cyan-500/30 hover:border-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 text-[1.1rem] font-medium py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 group tracking-wide cursor-pointer">
+        Unlock Vault
+        <!-- arrow_right_alt SVG -->
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 transform group-hover:translate-x-1 transition-transform">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+        </svg>
+      </button>
+    </form>
+  </div>
+  }
+  @else {
+  <!-- WHEN VAULT DOES NOT EXIST -->
+  <div class="relative w-full sm:w-105 rounded-2xl border border-z-border bg-slate-400/30 backdrop-blur-xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.6)] px-8 pt-9 pb-8">
+    <div class="w-full h-20 flex items-center justify-center py-4">
+      <div class="w-14 h-14 rounded-2xl bg-linear-to-br from-cyan-800/60 to-cyan-600/60 flex items-center justify-center border border-cyan-500/20 shadow-[0_0_20px_rgba(6,182,212,0.15)]">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-7 h-7 text-cyan-400">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+        </svg>
+      </div>
+    </div>
+    
+    <!-- Heading -->
+    <h1 class="text-white text-[19px] font-semibold text-center mb-6 tracking-wide">Secure Your Digital Assets</h1>
+    
+    <!-- Auth Form -->
+    <form class="w-full flex flex-col gap-4" [formGroup]="createVaultForm">
+      <!-- Username Field -->
+      <div class="relative flex flex-col">
+        <label class="text-xs text-slate-300 font-medium mb-1.5 pl-1">Username</label>
+        <div class="relative">
+          <!-- person prefix icon -->
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+            </svg>
+          </div>
+          <input type="text" [required]="true" formControlName="username" placeholder="johndoe" class="w-full bg-slate-950/50 border border-slate-700/50 rounded-xl pl-10 pr-4 py-3 text-white text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/20 transition-all placeholder-slate-500 shadow-inner">
+        </div>
+      </div>
+
+      <!-- Master Password Field -->
+      <div class="relative flex flex-col">
+        <label class="text-xs text-slate-300 font-medium mb-1.5 pl-1">Master Password</label>
+        <div class="relative">
+          <!-- lock prefix icon -->
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+            </svg>
+          </div>
+          
+          <input [type]="passwordVisibilityState ? 'text' : 'password'" [required]="true" formControlName="masterPassword" placeholder="••••••••••••" class="w-full bg-slate-950/50 border border-slate-700/50 rounded-xl pl-10 pr-10 py-3 text-white text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/20 transition-all placeholder-slate-500 shadow-inner">
+          
+          <!-- visibility suffix button -->
+          <button type="button" (click)="showHidePassword()" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-200 transition">
+            @if (passwordVisibilityState) {
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+              </svg>
+            } @else {
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            }
+          </button>
+        </div>
+      </div>
+
+      <!-- Confirm Master Password Field -->
+      <div class="relative flex flex-col">
+        <label class="text-xs text-slate-300 font-medium mb-1.5 pl-1">Confirm Master Password</label>
+        <div class="relative">
+          <!-- lock prefix icon -->
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+            </svg>
+          </div>
+          
+          <input [type]="passwordVisibilityState ? 'text' : 'password'" [required]="true" formControlName="confirmMasterPassword" placeholder="••••••••••••" class="w-full bg-slate-950/50 border border-slate-700/50 rounded-xl pl-10 pr-10 py-3 text-white text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/20 transition-all placeholder-slate-500 shadow-inner">
+          
+          <!-- visibility suffix button -->
+          <button type="button" (click)="showHidePassword()" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-200 transition">
+            @if (passwordVisibilityState) {
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+              </svg>
+            } @else {
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            }
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="w-full mt-2 border border-cyan-500/30 hover:border-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 text-[1.1rem] font-medium py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 group tracking-wide cursor-pointer">
+        Create Vault
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 transform group-hover:translate-x-1 transition-transform">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+        </svg>
+      </button>
+    </form>
+  </div>
+  }
+
+</div>

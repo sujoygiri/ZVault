@@ -1,0 +1,6 @@
+{
+  "name": "@zvault/shared-api",
+  "version": "1.0.0",
+  "main": "api.types.ts",
+  "types": "api.types.ts"
+}

@@ -5,11 +5,11 @@
   "main": "dist/main/main.js",
   "scripts": {
     "build:main": "tsc -b tsconfig.json",
-    "build:renderer": "vite build",
+    "build:renderer": "cd src/renderer/zvault && npm run build",
     "build": "npm run build:main && npm run build:renderer",
     "dev:main": "tsc --watch -p tsconfig.json",
-    "dev:renderer": "vite",
-    "dev": "concurrently \"npm run dev:main\" \"npm run dev:renderer\" \"electronmon . --watch dist/main\"",
+    "dev:renderer": "cd src/renderer/zvault && npm run start",
+    "dev": "concurrently \"npm run dev:renderer\" \"npm run dev:main\" \"electronmon . --watch dist/main\"",
     "start": "electron .",
     "dist": "npm run build && electron-builder",
     "postinstall": "electron-builder install-app-deps"
@@ -54,17 +54,12 @@
     "@googleapis/drive": "^20.0.1",
     "@node-rs/argon2": "^2.0.2",
     "adm-zip": "^0.5.16",
-    "google-auth-library": "^10.5.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "google-auth-library": "^10.5.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.2",
     "@types/adm-zip": "^0.5.7",
     "@types/node": "^25.0.3",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
     "concurrently": "^9.2.1",
     "electron": "^39.2.7",
     "electron-builder": "^26.0.12",

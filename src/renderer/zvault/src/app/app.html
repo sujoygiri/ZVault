@@ -1,0 +1,11 @@
+<!-- <app-sidebar/> -->
+@if (isLoading()) {
+    <p>Nothing to show</p>
+} @else {
+    @if (showAuthForm()) {
+        <app-auth [isVaultExist]="isVaultExist()" (vaultDataEmitter)="receivedVaultData($event)"/>
+    } @else {
+        <app-content [vaultData]="vaultData()"/>
+    }
+    <app-toasts></app-toasts>
+}

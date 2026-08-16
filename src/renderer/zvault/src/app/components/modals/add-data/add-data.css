@@ -1,0 +1,119 @@
+/* Entry Transition via @starting-style */
+.modal-backdrop {
+  opacity: 1;
+  transition: opacity 200ms ease-out;
+
+  @starting-style {
+    opacity: 0;
+  }
+}
+
+.modal-backdrop.is-closing {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.modal-card {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  transition: opacity 200ms ease-out, transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: modalEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+  @starting-style {
+    opacity: 0;
+    transform: scale(0.95) translateY(-8px);
+  }
+}
+
+.modal-card.is-closing {
+  animation: modalExit 200ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes modalExit {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(12px);
+  }
+}
+
+.animate-scale-in {
+  animation: scaleIn 180ms ease-out forwards;
+}
+
+/* Generator Toggle Animation */
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Container Height Transition */
+.tab-content-grid {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 500ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tab-content-grid.is-collapsing {
+  grid-template-rows: 0fr;
+}
+
+.tab-content-inner {
+  overflow: hidden;
+}
+
+/* Tab Switch Animations */
+.tab-enter {
+  animation: tabSlideIn 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.tab-leave {
+  animation: tabFadeOut 120ms ease-in forwards;
+}
+
+@keyframes tabSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tabFadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* Active Pill Transition */
+.tab-active {
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
