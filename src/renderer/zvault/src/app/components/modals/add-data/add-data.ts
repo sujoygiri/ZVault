@@ -1,6 +1,6 @@
 import { Component, effect, input, OnInit, output, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { DataType, PasswordDetails, TextDetails, TotalPasswordData } from '@zvault/shared-api';
+import { DataType, NewPassword, NewText, PasswordDetails, TextDetails, TotalPasswordData } from '@zvault/shared-api';
 
 export interface PasswordPayload {
   title: string;
@@ -31,7 +31,7 @@ export class AddData implements OnInit {
   textDataToBeEdited = input<TextDetails>();
   selectedDataType = output<DataType>();
   close = output<void>();
-  savePassword = output<PasswordPayload | PasswordDetails>();
+  savePassword = output<NewPassword>();
   saveText = output<TextPayload | TextDetails>();
 
   // Active Tab State

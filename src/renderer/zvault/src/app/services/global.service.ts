@@ -12,6 +12,7 @@ export class GlobalService {
 
   async getVaultData(dataType: DataType) {
     const vaultData = await window.electronAPI?.fetchData(dataType,this.currentPageNum(),this.pageSize());
+    this.totalEntries.set(vaultData?.totalEntries ?? 0);
     return vaultData;
   }
 }

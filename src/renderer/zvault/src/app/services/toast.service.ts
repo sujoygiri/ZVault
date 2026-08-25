@@ -24,6 +24,8 @@ export interface ToastItemState {
   animFrameId?: number;
 }
 
+
+
 @Injectable({
   providedIn: 'root',
 })
@@ -38,19 +40,19 @@ export class ToastService {
     this.toasts.update((current) => [...current, newToast]);
   }
 
-  info(title: string, message?: string, action?: ToastAction, duration?: number): void {
+  info(title: string, message?: string, duration?: number, action?: ToastAction): void {
     this.show({ type: 'info', title, message, action, duration });
   }
 
-  success(title: string, message?: string, action?: ToastAction, duration?: number): void {
+  success(title: string, message?: string, duration?: number, action?: ToastAction): void {
     this.show({ type: 'success', title, message, action, duration });
   }
 
-  warning(title: string, message?: string, action?: ToastAction, duration?: number): void {
+  warning(title: string, message?: string, duration?: number, action?: ToastAction): void {
     this.show({ type: 'warning', title, message, action, duration });
   }
 
-  error(title: string, message?: string, action?: ToastAction, duration?: number): void {
+  error(title: string, message?: string, duration?: number, action?: ToastAction): void {
     this.show({ type: 'error', title, message, action, duration });
   }
 

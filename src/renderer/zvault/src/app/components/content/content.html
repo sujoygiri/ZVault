@@ -14,23 +14,23 @@
     <div class="flex-1 min-h-0 overflow-hidden">
       @if (selectedMenuItem() === 'passwords') {
       <app-password-view [vaultItemPasswords]="vaultItemPasswords()"
-        [isDarkMode]="isDarkMode()" (toggleTheme)="toggleTheme()"
+        (toggleTheme)="toggleTheme()"
         (addPassword)="isAddEditDataModalOpen.set(true); dataEntryMode.set('add')"
         (sortChange)="handleSortChange($event)"
         (openTextView)="openTextViewModal($event.id, $event.title, $event.state)"
         (editPassword)="handlePasswordDataEdit($event.item, $event.state)"
         (deletePassword)="openDeleteConfirmationModal($event.id, $event.title)"
-        (fetchDecryptedData)="getDecryptedData($event.id, $event.state)">
+        >
       </app-password-view>
       } @else if (selectedMenuItem() === 'settings') {
-      <app-settings [isDarkMode]="isDarkMode()" (toggleTheme)="toggleTheme()"
+      <app-settings (toggleTheme)="toggleTheme()"
         (addSetting)="handleSettingsAdd()">
       </app-settings>
       }
     </div>
 
     <!-- GLOBAL PAGINATION FOOTER -->
-    @if (selectedMenuItem() === 'passwords') {
+    @if (vaultItemPasswords().length) {
     <div
       class="shrink-0 px-10 py-3 bg-transparent border-t border-slate-200/50 dark:border-slate-800/50">
       <app-pagination [totalEntries]="globalService.totalEntries()"

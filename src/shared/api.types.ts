@@ -16,10 +16,10 @@ export type CloudDrive = "googleDrive" | "oneDrive" | "dropBox";
 export type GoogleDriveFile = drive_v3.Schema$File;
 
 export interface IElectronAPI {
-    createNewVault: (password: string) => Promise<ResponsePayload>,
+    createNewVault: (password: string) => Promise<{ success: boolean, message: string; }>,
     vaultExistStatus: () => Promise<boolean>,
     unlockVault: (password: string) => Promise<{ success: boolean, message: string; }>,
-    addNewData: (data: NewPassword | NewText, pageNum: number, pageSize: number) => Promise<ResponsePayload>,
+    addNewData: (data: NewPassword | NewText) => Promise<{ success: boolean, message: string; }>,
     deleteData: (id: string, type: DataType, pageNum: number, pageSize: number) => Promise<ResponsePayload>,
     editData: (updatedData: PasswordDetails | TextDetails, pageNum: number, pageSize: number) => Promise<ResponsePayload>
     decryptSensitiveData: (id: string, type: DataType) => Promise<string>,

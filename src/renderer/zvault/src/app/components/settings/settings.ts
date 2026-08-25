@@ -39,7 +39,6 @@ export interface VaultSettings {
 export class Settings {
 
   activeTab: SettingsTab = 'general';
-  isDarkMode = input<boolean>(false);
 
   toggleTheme = output<void>();
   addSetting = output<void>();

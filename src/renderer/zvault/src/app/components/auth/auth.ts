@@ -16,13 +16,13 @@ import { GlobalService } from '../../services/global.service';
 export class Auth implements OnInit {
 
   @Input() isVaultExist!: boolean;
-  @Output() vaultDataEmitter = new EventEmitter<ResponsePayload>()
+  @Output() vaultDataEmitter = new EventEmitter<ResponsePayload>();
   passwordVisibilityState: boolean = false;
   createVaultForm!: FormGroup;
   unlockVaultForm!: FormGroup;
 
-  constructor(
-    private formBuilder: FormBuilder, 
+  constructor (
+    private formBuilder: FormBuilder,
     private globalService: GlobalService
   ) { }
 
@@ -42,7 +42,7 @@ export class Auth implements OnInit {
     const confirmMasterPassword = formControl.get("confirmMasterPassword")?.value as string;
     const masterPassword = formControl.get("masterPassword")?.value as string;
     if (confirmMasterPassword && masterPassword && (masterPassword === confirmMasterPassword)) {
-      return { passwordNotMatched: true }
+      return { passwordNotMatched: true };
     }
     return null;
   }
@@ -52,9 +52,19 @@ export class Auth implements OnInit {
   }
 
   async handleVaultUnlock() {
-    const { masterPassword } = this.unlockVaultForm.value;    
+    const { masterPassword } = this.unlockVaultForm.value;
     const vaultUnlockResponse = await window.electronAPI?.unlockVault(masterPassword);
-    if(vaultUnlockResponse?.success){
+    if (vaultUnlockResponse?.success) {
+      const vaultData = await this.globalService.getVaultData("password");
+      this.globalService.totalEntries.set(vaultData?.totalEntries ?? 0);
+      this.vaultDataEmitter.emit(vaultData);
+    }
+  }
+
+  async handleVaultCreate() {
+    const { masterPassword } = this.createVaultForm.value;
+    const vaultCreateResponse = await window.electronAPI?.createNewVault(masterPassword);
+    if (vaultCreateResponse?.success) {
       const vaultData = await this.globalService.getVaultData("password");
       this.globalService.totalEntries.set(vaultData?.totalEntries ?? 0);
       this.vaultDataEmitter.emit(vaultData);

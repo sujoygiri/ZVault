@@ -6,11 +6,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   createNewVault: (password: string) => ipcRenderer.invoke("createNewVault", password),
   unlockVault: (password: string) => ipcRenderer.invoke("unlockVault", password),
   vaultExistStatus: () => ipcRenderer.invoke("vaultExistStatus"),
-  addNewData: (
-    data: NewPassword | NewText,
-    pageNum: number,
-    pageSize: number
-  ) => ipcRenderer.invoke("addNewData", data, pageNum, pageSize),
+  addNewData: (data: NewPassword | NewText) => ipcRenderer.invoke("addNewData", data),
   deleteData: (id: string, type: DataType, pageNum: number, pageSize: number) => ipcRenderer.invoke("deleteData", id, type, pageNum, pageSize),
   editData: (updatedData: PasswordDetails | TextDetails, pageNum: number, pageSize: number) => ipcRenderer.invoke("editData", updatedData, pageNum, pageSize),
   decryptSensitiveData: (id: string, type: DataType) => ipcRenderer.invoke("decryptSensitiveData", id, type),

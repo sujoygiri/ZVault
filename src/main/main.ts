@@ -159,6 +159,8 @@ async function initializeDbConnection(dbEncryptionKey: string) {
     try {
         const dbInstance = await DuckDBInstance.create();
         dbConnection = await dbInstance.connect();
+        // await dbConnection.run(`INSTALL 'C:/Users/SG0927/Downloads/httpfs.duckdb_extension'`);
+        // await dbConnection.run(`LOAD httpfs`);
         await dbConnection.run(
             `ATTACH '${VAULT_PATH}' AS vault (ENCRYPTION_KEY '${dbEncryptionKey}', ENCRYPTION_CIPHER 'GCM')`,
         );
@@ -333,7 +335,7 @@ async function createNewVault(_event: IpcMainInvokeEvent, password: string) {
             ...encryptedDEKMetaData
         }
         await fs.promises.writeFile(VAULT_DATA_PATH, JSON.stringify(appDataToStore));
-        return await getTableData("accounts", "id", 1, 10, "ASC");
+        return { success: true, message: 'Vault created successfully' };
     } catch (error) {
         console.log({ error, where: "create new vault" });
         if (error instanceof Error) {
@@ -418,13 +420,12 @@ async function decryptSensitiveData(
 async function addNewData(
     _event: IpcMainInvokeEvent,
     data: NewPassword | NewText,
-    pageNum: number,
-    pageSize: number,
 ) {
     try {
         if (vaultDEK && dbConnection) {
             let columnName: string = "id";
             let tableName = getDataTableName(data.type);
+            let dataSaveResponse!: DuckDBMaterializedResult;
             if (data.type === "password") {
                 const sensitivePasswordData = {
                     usernameOrEmail: data.usernameOrEmail,
@@ -438,7 +439,7 @@ async function addNewData(
                     "utf8",
                     "hex",
                 );
-                await dbConnection.run(
+                dataSaveResponse = await dbConnection.run(
                     `INSERT INTO ${tableName} (iv, tag, title, category, encrypted_data, url) VALUES ($a, $b, $c, $d, $e, $f)`,
                     { a: encryptedPasswordMetadata.IV, b: encryptedPasswordMetadata.TAG, c: data.title, d: data.category, e: encryptedPasswordMetadata.encryptedData, f: data.url },
                     { a: VARCHAR, b: VARCHAR, c: VARCHAR, d: VARCHAR, e: VARCHAR, f: VARCHAR },
@@ -454,7 +455,7 @@ async function addNewData(
                     "utf8",
                     "hex",
                 );
-                await dbConnection.run(
+                dataSaveResponse = await dbConnection.run(
                     `INSERT INTO texts (iv, tag, title, category, encrypted_data) VALUES ($a, $b, $c, $d, $e)`,
                     {
                         a: encryptedPasswordMetadata.IV,
@@ -466,13 +467,11 @@ async function addNewData(
                     { a: VARCHAR, b: VARCHAR, c: VARCHAR, d: VARCHAR, e: VARCHAR },
                 );
             }
-            return await getTableData(
-                tableName,
-                columnName,
-                pageNum,
-                pageSize,
-                "ASC",
-            );
+            if(dataSaveResponse) {
+                return {success: true, message: "Data added successfully"};
+            } else {
+                return { success: false, message: "Something went wrong" };
+            }
         } else {
             await handelError("VaultDek or DbConnection is missing", "Data", "@addNewData", "Something went wrong. Restart the app!")
             // need to send error that vaultDEK is missing

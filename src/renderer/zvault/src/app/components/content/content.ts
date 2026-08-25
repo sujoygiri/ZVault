@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, input, OnInit, QueryList, signal, ViewChildren } from '@angular/core';
-import { ResponsePayload, PasswordDetails, TextDetails, NewPassword, SensitivePasswordData, TotalPasswordData, DataType } from '@zvault/shared-api';
+import { ResponsePayload, PasswordDetails, TextDetails, NewPassword, SensitivePasswordData, TotalPasswordData, DataType, NewText } from '@zvault/shared-api';
 import { ThemeService } from '../../services/theme.service';
 import { GlobalService } from '../../services/global.service';
 import { TimeAgoPipe } from '../../utils/time-ago.pipe';
@@ -8,7 +8,6 @@ import { ToggleStateDirective } from '../../directives/toggle-state.directive';
 import { TextView } from "../modals/text-view/text-view";
 import { DeleteConfirmation } from "../modals/delete-confirmation/delete-confirmation";
 import { AddData, PasswordPayload, TextPayload } from "../modals/add-data/add-data";
-import { ItemCardStyleDirective } from '../../directives/item-card-style.directive';
 import { Pagination } from "../pagination/pagination";
 import { ToastService } from '../../services/toast.service';
 import { Settings } from "../settings/settings";
@@ -39,8 +38,7 @@ export class Content implements OnInit {
   vaultData = input<ResponsePayload | null>();
   // State Signals
   selectedMenuItem = signal<'passwords' | 'settings'>('passwords');
-  isDarkMode = signal<boolean>(false);
-  vaultItemPasswords = signal<any[]>([]);
+  vaultItemPasswords = signal<PasswordDetails[]>([]);
 
   // Modal State Signals
   isAddEditDataModalOpen = signal<boolean>(false);
@@ -59,7 +57,11 @@ export class Content implements OnInit {
   passwordDataToBeEdited = signal<any>(null);
   textDataToBeEdited = signal<any>(null);
 
-  constructor(protected globalService: GlobalService) { }
+  constructor(
+    protected globalService: GlobalService,
+    private themeService: ThemeService,
+    private toastService: ToastService
+  ) { }
   
   ngOnInit(): void {
     console.log(this.vaultData());
@@ -74,7 +76,7 @@ export class Content implements OnInit {
 
   // Header & View Action Handlers
   toggleTheme(): void {
-    this.isDarkMode.update(dark => !dark);
+    this.themeService.toggleTheme();
   }
 
   handleSortChange(sortOption: string): void {
@@ -104,16 +106,18 @@ export class Content implements OnInit {
     this.isDeleteConfirmationModalOpen.set(true);
   }
 
-  getDecryptedData(id: any, stateRef: any): void {
-    if (!stateRef.attachedData()) {
-      stateRef.attachedData.set({
-        usernameOrEmail: 'decrypted_user@domain.com',
-        password: 'DecryptedSecret123!'
-      });
+  async handleSavePassword(payload: NewPassword) {
+    if(payload){
+      payload.type = "password";
+      const response = await window.electronAPI?.addNewData(payload);
+      if(response?.success){
+        this.toastService.success('Password', response.message);
+        const vaultData = await this.globalService.getVaultData(payload.type);
+        this.vaultItemPasswords.set(vaultData?.rows as PasswordDetails[]);
+      }else{
+        this.toastService.error('Password', response?.message);
+      }
     }
-  }
-
-  handleSavePassword(payload: any): void {
     this.isAddEditDataModalOpen.set(false);
   }
 

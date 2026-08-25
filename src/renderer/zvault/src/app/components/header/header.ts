@@ -1,4 +1,5 @@
 import { Component, input, output } from '@angular/core';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-header',
@@ -9,9 +10,10 @@ import { Component, input, output } from '@angular/core';
 export class Header {
   title = input<string>('Vault');
   addButtonText = input<string>('Add Password');
-  isDarkMode = input<boolean>(false);
 
   toggleTheme = output<void>();
   addData = output<void>();
   sortChange = output<string>();
+
+  constructor(protected themeService: ThemeService){}
 }
