@@ -5,6 +5,7 @@ import { TimeAgoPipe } from '../../utils/time-ago.pipe';
 import { ItemCardStyleDirective } from '../../directives/item-card-style.directive';
 import { Header } from '../header/header';
 import { EmptyState } from '../empty-state/empty-state';
+import { DataType, PasswordDetails, TotalPasswordData } from '@zvault/shared-api';
 
 @Component({
   selector: 'app-password-view',
@@ -20,26 +21,40 @@ import { EmptyState } from '../empty-state/empty-state';
   styleUrl: './password-view.css',
 })
 export class PasswordView {
-  vaultItemPasswords = input<any[]>([]);
+  vaultItemPasswords = input<PasswordDetails[]>([]);
 
   toggleTheme = output<void>();
   addPassword = output<void>();
   sortChange = output<string>();
-  openTextView = output<{ id: any; title: string; state: any; }>();
-  editPassword = output<{ item: any; state: any; }>();
-  deletePassword = output<{ id: any; title: string; }>();
+  openNoteView = output<{ title: string, content: string; }>();
+  editPassword = output<{item: TotalPasswordData, type: DataType}>();
+  deletePassword = output<{ id: string; title: string; type: DataType }>();
 
-  emitDataAddAction() {
-    this.addPassword.emit();
+  async triggerNoteView(id: string, noteTitle: string, toggleState: ToggleStateDirective) {
+    await this.fetchDecryptedData(id, toggleState);
+    let note = toggleState.attachedData().note;
+    let content = note !== '' ? note : 'No note is available';
+    this.openNoteView.emit({ title: noteTitle, content });
   }
 
   async fetchDecryptedData(id: string, toggleSate: ToggleStateDirective) {
-    if(id && toggleSate && toggleSate.attachedData() === null) {
+    if (id && toggleSate && toggleSate.attachedData() === null) {
       const rawResponse = await window.electronAPI?.decryptSensitiveData(id, 'password');
-      if(rawResponse){
+      if (rawResponse) {
         const parsedResponse = JSON.parse(rawResponse);
-        toggleSate.attachedData.set(parsedResponse); 
+        toggleSate.attachedData.set(parsedResponse);
       }
     }
+  }
+
+  async handlePasswordEdit(item: PasswordDetails, toggleSate: ToggleStateDirective) {
+    await this.fetchDecryptedData(item.id, toggleSate);
+    const totalPasswordData: TotalPasswordData = {
+      ...item,
+      usernameOrEmail: toggleSate.attachedData().usernameOrEmail,
+      password: toggleSate.attachedData().password,
+      note: toggleSate.attachedData().note
+    };
+    this.editPassword.emit({item: totalPasswordData, type: 'password'});
   }
 }

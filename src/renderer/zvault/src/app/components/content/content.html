@@ -17,9 +17,9 @@
         (toggleTheme)="toggleTheme()"
         (addPassword)="isAddEditDataModalOpen.set(true); dataEntryMode.set('add')"
         (sortChange)="handleSortChange($event)"
-        (openTextView)="openTextViewModal($event.id, $event.title, $event.state)"
-        (editPassword)="handlePasswordDataEdit($event.item, $event.state)"
-        (deletePassword)="openDeleteConfirmationModal($event.id, $event.title)"
+        (openNoteView)="openNoteViewModal($event.title, $event.content)"
+        (editPassword)="handlePasswordDataEdit($event.item, $event.type)"
+        (deletePassword)="openDeleteConfirmationModal($event.id, $event.title, $event.type)"
         >
       </app-password-view>
       } @else if (selectedMenuItem() === 'settings') {
@@ -47,8 +47,8 @@
   <app-add-data [isOpen]="isAddEditDataModalOpen()"
     [passwordDataToBeEdited]="passwordDataToBeEdited()"
     [textDataToBeEdited]="textDataToBeEdited()"
+    [selectedDataType]="selectedDataType()"
     (close)="isAddEditDataModalOpen.set(false)"
-    (selectedDataType)="selectedDataType.set($event)"
     (savePassword)="handleSavePassword($event)"
     (saveText)="handleSaveText($event)">
   </app-add-data>

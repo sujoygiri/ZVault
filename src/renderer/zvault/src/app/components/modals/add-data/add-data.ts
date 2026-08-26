@@ -27,9 +27,9 @@ export class AddData implements OnInit {
 
   // Inputs / Outputs
   isOpen = input<boolean>(false);
-  passwordDataToBeEdited = input<TotalPasswordData>();
+  passwordDataToBeEdited = input<TotalPasswordData | null>(null);
   textDataToBeEdited = input<TextDetails>();
-  selectedDataType = output<DataType>();
+  selectedDataType = input<DataType>();
   close = output<void>();
   savePassword = output<NewPassword>();
   saveText = output<TextPayload | TextDetails>();
@@ -55,14 +55,14 @@ export class AddData implements OnInit {
   constructor (private formBuilder: FormBuilder) { 
     effect(() => {
       const passwordToEdit = this.passwordDataToBeEdited();
+      this.activeTab.set(this.selectedDataType() ?? 'password');
       if (passwordToEdit) {
         this.passwordForm.patchValue(passwordToEdit);
       }
     });
   }
 
-  ngOnInit(): void {
-
+  ngOnInit(): void {    
     this.passwordForm = this.formBuilder.group({
       title: ['', Validators.required],
       usernameOrEmail: ['', Validators.required],

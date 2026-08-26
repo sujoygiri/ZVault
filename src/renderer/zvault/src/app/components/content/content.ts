@@ -43,7 +43,7 @@ export class Content implements OnInit {
   // Modal State Signals
   isAddEditDataModalOpen = signal<boolean>(false);
   dataEntryMode = signal<'add' | 'edit'>('add');
-  selectedDataType = signal<string>('password');
+  selectedDataType = signal<DataType>('password');
 
   isTextViewModalOpen = signal<boolean>(false);
   textTitle = signal<string>('');
@@ -54,7 +54,7 @@ export class Content implements OnInit {
   deleteTargetName = signal<string>('');
 
   // Tracked edit payloads
-  passwordDataToBeEdited = signal<any>(null);
+  passwordDataToBeEdited = signal<TotalPasswordData | null>(null);
   textDataToBeEdited = signal<any>(null);
 
   constructor(
@@ -88,19 +88,21 @@ export class Content implements OnInit {
   }
 
   // Data Actions & Modals
-  openTextViewModal(id: any, title: string, stateRef: any): void {
+  openNoteViewModal(title: string, content: string): void {
     this.textTitle.set(title);
-    this.textContent.set(stateRef?.attachedData()?.note || 'No notes available for this entry.');
+    this.textContent.set(content);
     this.isTextViewModalOpen.set(true);
   }
 
-  handlePasswordDataEdit(item: any, stateRef: any): void {
+  handlePasswordDataEdit(item: TotalPasswordData, type: DataType): void {
+    this.selectedDataType.set(type);
     this.passwordDataToBeEdited.set(item);
     this.dataEntryMode.set('edit');
     this.isAddEditDataModalOpen.set(true);
   }
 
-  openDeleteConfirmationModal(id: any, title: string): void {
+  openDeleteConfirmationModal(id: string, title: string, type: DataType): void {
+    this.selectedDataType.set(type);
     this.deleteTargetId.set(id);
     this.deleteTargetName.set(title);
     this.isDeleteConfirmationModalOpen.set(true);
@@ -125,8 +127,23 @@ export class Content implements OnInit {
     this.isAddEditDataModalOpen.set(false);
   }
 
-  handleDelete(id: any): void {
-    this.isDeleteConfirmationModalOpen.set(false);
+  async handleDelete(id: string) {
+    try {
+      const dataDeleteResponse = await window.electronAPI?.deleteData(id, this.selectedDataType());
+      if(dataDeleteResponse?.success) {
+        this.toastService.success(this.selectedDataType(), dataDeleteResponse.message);
+        console.log(this.selectedDataType());
+        
+        const vaultData = await this.globalService.getVaultData(this.selectedDataType());
+        this.vaultItemPasswords.set(vaultData?.rows as PasswordDetails[]);
+        this.isDeleteConfirmationModalOpen.set(false);
+      } else {
+        this.toastService.error(dataDeleteResponse?.message ?? "Something went wrong");
+      }
+    } catch (error) {
+      console.error(error);
+      this.toastService.error("Something went wrong");
+    }
   }
 
   // Pagination Callbacks

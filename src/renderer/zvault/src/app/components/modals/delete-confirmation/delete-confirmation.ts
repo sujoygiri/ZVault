@@ -8,7 +8,7 @@ import { Component, input, output } from '@angular/core';
 })
 export class DeleteConfirmation {
   isOpen = input<boolean>(false);
-  itemName = input<string>('this item');
+  itemName = input<string>();
   itemId = input<string | null>(null);
 
   close = output<void>();

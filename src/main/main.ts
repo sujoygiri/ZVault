@@ -484,26 +484,21 @@ async function addNewData(
 async function deleteData(
     _event: IpcMainInvokeEvent,
     id: string,
-    type: DataType,
-    pageNum: number,
-    pageSize: number,
-) {
+    type: DataType
+): Promise<{success: boolean, message: string}> {
     try {
         if (dbConnection) {
-            let columnName: string = "id";
             let tableName = getDataTableName(type);
-            await dbConnection.run(
+            let deleteResult = await dbConnection.run(
                 `DELETE FROM ${tableName} WHERE id = $a`,
                 { a: id },
                 { a: VARCHAR },
             );
-            return await getTableData(
-                tableName,
-                columnName,
-                pageNum,
-                pageSize,
-                "ASC",
-            );
+            if(deleteResult) {
+                return {success: true, message: "Data deleted successfully"};
+            } else {
+                return {success: false, message: "Something went wrong"};
+            }
         } else {
             throw new Error("DB connection or VaultDEK not found in deleteData");
         }
