@@ -2,9 +2,7 @@
   class="bg-[#F8FAFC] dark:bg-slate-950 text-slate-800 dark:text-slate-200 flex h-screen w-full overflow-hidden antialiased transition-colors duration-200">
 
   <!-- SIDEBAR COMPONENT -->
-  <app-sidebar [selectedMenuItem]="selectedMenuItem()"
-    (selectMenuItem)="handleMenuItemSelect($event)">
-  </app-sidebar>
+  <app-sidebar (onSelectMenuItem)="handleMenuItemSelect($event)"></app-sidebar>
 
   <!-- MAIN VIEWPORT CONTAINER -->
   <div
@@ -13,7 +11,7 @@
     <!-- VIEW CONTENT -->
     <div class="flex-1 min-h-0 overflow-hidden">
       @if (selectedMenuItem() === 'passwords') {
-      <app-password-view [vaultItemPasswords]="vaultItemPasswords()"
+      <app-password-view [(vaultItemPasswords)]="vaultItemPasswords"
         (toggleTheme)="toggleTheme()"
         (addPassword)="isAddEditDataModalOpen.set(true); dataEntryMode.set('add')"
         (sortChange)="handleSortChange($event)"
@@ -22,10 +20,14 @@
         (deletePassword)="openDeleteConfirmationModal($event.id, $event.title, $event.type)"
         >
       </app-password-view>
+      } @else if (selectedMenuItem() === 'texts') {
+
       } @else if (selectedMenuItem() === 'settings') {
       <app-settings (toggleTheme)="toggleTheme()"
         (addSetting)="handleSettingsAdd()">
       </app-settings>
+      } @else {
+        
       }
     </div>
 
@@ -48,6 +50,7 @@
     [passwordDataToBeEdited]="passwordDataToBeEdited()"
     [textDataToBeEdited]="textDataToBeEdited()"
     [selectedDataType]="selectedDataType()"
+    [dataEntryMode]="dataEntryMode()"
     (close)="isAddEditDataModalOpen.set(false)"
     (savePassword)="handleSavePassword($event)"
     (saveText)="handleSaveText($event)">

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, input, OnInit, QueryList, signal, ViewChildren } from '@angular/core';
+import { Component, computed, input, model, OnInit, QueryList, signal, ViewChildren } from '@angular/core';
 import { ResponsePayload, PasswordDetails, TextDetails, NewPassword, SensitivePasswordData, TotalPasswordData, DataType, NewText } from '@zvault/shared-api';
 import { ThemeService } from '../../services/theme.service';
 import { GlobalService } from '../../services/global.service';
@@ -11,10 +11,8 @@ import { AddData, PasswordPayload, TextPayload } from "../modals/add-data/add-da
 import { Pagination } from "../pagination/pagination";
 import { ToastService } from '../../services/toast.service';
 import { Settings } from "../settings/settings";
-import { Sidebar } from '../sidebar/sidebar';
+import { MenuItem, Sidebar } from '../sidebar/sidebar';
 import { PasswordView } from '../password-view/password-view';
-
-export type MenuItems = 'passwords' | 'texts' | 'settings';
 
 
 @Component({
@@ -37,8 +35,8 @@ export class Content implements OnInit {
   // after auth input data
   vaultData = input<ResponsePayload | null>();
   // State Signals
-  selectedMenuItem = signal<'passwords' | 'settings'>('passwords');
-  vaultItemPasswords = signal<PasswordDetails[]>([]);
+  selectedMenuItem = signal<MenuItem>('passwords');
+  vaultItemPasswords = model<PasswordDetails[]>([]);
 
   // Modal State Signals
   isAddEditDataModalOpen = signal<boolean>(false);
@@ -70,7 +68,7 @@ export class Content implements OnInit {
   }
 
   // Navigation Handler
-  handleMenuItemSelect(item: 'passwords' | 'settings'): void {
+  handleMenuItemSelect(item: MenuItem): void {
     this.selectedMenuItem.set(item);
   }
 

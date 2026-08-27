@@ -30,6 +30,7 @@ export class AddData implements OnInit {
   passwordDataToBeEdited = input<TotalPasswordData | null>(null);
   textDataToBeEdited = input<TextDetails>();
   selectedDataType = input<DataType>();
+  dataEntryMode = input<'add'| 'edit'>();
   close = output<void>();
   savePassword = output<NewPassword>();
   saveText = output<TextPayload | TextDetails>();

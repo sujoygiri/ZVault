@@ -2,7 +2,6 @@ import { Component, input, output } from '@angular/core';
 import { ToastService } from '../../services/toast.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Header } from '../header/header';
 
 export type SettingsTab = 'general' | 'security' | 'backup' | 'notifications';
 
@@ -30,8 +29,7 @@ export interface VaultSettings {
   selector: 'app-settings',
   imports: [
     CommonModule, 
-    FormsModule,
-    Header
+    FormsModule
   ],
   templateUrl: './settings.html',
   styleUrl: './settings.css',
@@ -40,7 +38,6 @@ export class Settings {
 
   activeTab: SettingsTab = 'general';
 
-  toggleTheme = output<void>();
   addSetting = output<void>();
 
   // Vault Settings Model State

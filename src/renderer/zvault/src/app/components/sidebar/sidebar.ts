@@ -1,5 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, input, output } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
+
+export type MenuItem = 'passwords' | 'texts' | 'settings' | 'logout';
 
 @Component({
   selector: 'app-sidebar',
@@ -8,7 +10,10 @@ import { Component, input, output } from '@angular/core';
   styleUrl: './sidebar.css',
 })
 export class Sidebar {
-  selectedMenuItem = input<'passwords' | 'settings'>('passwords');
-  selectMenuItem = output<'passwords' | 'settings'>();
-  
+  currentMenuItem = signal<MenuItem>('passwords');
+  onSelectMenuItem = output<MenuItem>();
+  handleMenuItemSelect(menuItem: MenuItem) {
+    this.currentMenuItem.set(menuItem);
+    this.onSelectMenuItem.emit(menuItem);
+  }
 }

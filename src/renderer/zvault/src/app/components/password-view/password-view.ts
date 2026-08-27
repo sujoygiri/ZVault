@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, input, output } from '@angular/core';
+import { Component, model, output } from '@angular/core';
 import { ToggleStateDirective } from '../../directives/toggle-state.directive';
 import { TimeAgoPipe } from '../../utils/time-ago.pipe';
 import { ItemCardStyleDirective } from '../../directives/item-card-style.directive';
@@ -21,7 +21,7 @@ import { DataType, PasswordDetails, TotalPasswordData } from '@zvault/shared-api
   styleUrl: './password-view.css',
 })
 export class PasswordView {
-  vaultItemPasswords = input<PasswordDetails[]>([]);
+  vaultItemPasswords = model<PasswordDetails[]>([]);
 
   toggleTheme = output<void>();
   addPassword = output<void>();

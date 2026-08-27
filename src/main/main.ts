@@ -27,7 +27,7 @@ import AdmZip from "adm-zip";
 import { DataTables, DataType, NewPassword, NewText, PasswordDetails, TextDetails } from "../shared/api.types";
 
 const rawCredentials: any = fs.readFileSync(path.join(__dirname, "../../credential.env"), "utf8");
-const credential: { CLIENT_ID: string, CLIENT_SECRET: string } = JSON.parse(rawCredentials)
+const credential: { CLIENT_ID: string, CLIENT_SECRET: string; } = JSON.parse(rawCredentials);
 const CLIENT_ID = credential.CLIENT_ID;
 const CLIENT_SECRET = credential.CLIENT_SECRET;
 const REDIRECT_URI = 'http://localhost';
@@ -49,7 +49,7 @@ const prefixes = [
     "Mega", "Micro", "Mist", "Moon", "Mystic", "Neon", "Night", "Noble", "Nova", "Obsidian",
     "Ocean", "Omni", "Onyx", "Pale", "Phantom", "Prime", "Pure", "Quartz", "Quick", "Radiant",
     "Rare", "Red", "Rift", "Rogue", "Royal", "Ruby", "Sable", "Sage", "Savage", "Scarlet"
-]
+];
 const middles = [
     "active", "bound", "bridge", "burst", "call", "cast", "cell", "chain", "chord", "circuit",
     "clash", "coast", "coil", "craft", "crest", "cross", "crush", "dance", "dash", "door",
@@ -61,7 +61,7 @@ const middles = [
     "path", "phase", "pick", "pilot", "plot", "point", "port", "power", "press", "prime",
     "proof", "pulse", "quake", "reach", "read", "reef", "rise", "road", "roll", "root",
     "run", "scale", "scope", "script", "scroll", "seal", "seed", "set", "shape", "shift"
-]
+];
 const suffixes = [
     "base", "beam", "beat", "bell", "belt", "bit", "blade", "blast", "bloom", "bolt",
     "born", "bound", "break", "breath", "bright", "brook", "burn", "byte", "case", "cave",
@@ -73,7 +73,7 @@ const suffixes = [
     "fuse", "gate", "gear", "gem", "ghost", "glass", "glide", "glow", "gold", "grain",
     "graph", "grid", "grin", "grip", "ground", "grove", "guard", "guide", "gulf", "hand",
     "hard", "haunt", "head", "heart", "helm", "high", "hill", "hold", "hollow", "home"
-]
+];
 
 let vaultDEK: Buffer | null = null;
 let dbConnection: DuckDBConnection | null = null;
@@ -129,6 +129,7 @@ app.whenReady().then(() => {
     ipcMain.handle("createNewVault", createNewVault);
     ipcMain.handle("decryptSensitiveData", decryptSensitiveData);
     ipcMain.handle("fetchData", fetchData);
+    ipcMain.handle("searchData", searchData);
     // ipcMain.handle("connectToCloud", connectToCloud);
     ipcMain.handle("importCloudBackup", importGDriveData);
     ipcMain.handle("checkExistingBackup", checkExistingBackup);
@@ -311,7 +312,7 @@ async function getTableData(
 
 async function getAppData() {
     const storedAppData = await fs.promises.readFile(VAULT_DATA_PATH, { encoding: "utf8" });
-    return JSON.parse(storedAppData)
+    return JSON.parse(storedAppData);
 }
 
 async function createNewVault(_event: IpcMainInvokeEvent, password: string) {
@@ -333,7 +334,7 @@ async function createNewVault(_event: IpcMainInvokeEvent, password: string) {
         const appDataToStore = {
             dekEncryptionKeySalt: dekEncryptionKeySalt.toString("hex"),
             ...encryptedDEKMetaData
-        }
+        };
         await fs.promises.writeFile(VAULT_DATA_PATH, JSON.stringify(appDataToStore));
         return { success: true, message: 'Vault created successfully' };
     } catch (error) {
@@ -363,7 +364,7 @@ async function unlockVault(_event: IpcMainInvokeEvent, password: string) {
         if (!dbConnection) {
             await initializeDbConnection(vaultDEK.toString("hex"));
         }
-        return {success: true, message: 'Authentication successful'};
+        return { success: true, message: 'Authentication successful' };
     } catch (error) {
         if (dbConnection) {
             dbConnection.closeSync();
@@ -423,7 +424,6 @@ async function addNewData(
 ) {
     try {
         if (vaultDEK && dbConnection) {
-            let columnName: string = "id";
             let tableName = getDataTableName(data.type);
             let dataSaveResponse!: DuckDBMaterializedResult;
             if (data.type === "password") {
@@ -467,17 +467,17 @@ async function addNewData(
                     { a: VARCHAR, b: VARCHAR, c: VARCHAR, d: VARCHAR, e: VARCHAR },
                 );
             }
-            if(dataSaveResponse) {
-                return {success: true, message: "Data added successfully"};
+            if (dataSaveResponse) {
+                return { success: true, message: "Data added successfully" };
             } else {
                 return { success: false, message: "Something went wrong" };
             }
         } else {
-            await handelError("VaultDek or DbConnection is missing", "Data", "@addNewData", "Something went wrong. Restart the app!")
+            await handelError("VaultDek or DbConnection is missing", "Data", "@addNewData", "Something went wrong. Restart the app!");
             // need to send error that vaultDEK is missing
         }
     } catch (error) {
-        await handelError(error, "Data", "@addNewData", "Something went wrong. Restart the app!")
+        await handelError(error, "Data", "@addNewData", "Something went wrong. Restart the app!");
     }
 }
 
@@ -485,7 +485,7 @@ async function deleteData(
     _event: IpcMainInvokeEvent,
     id: string,
     type: DataType
-): Promise<{success: boolean, message: string}> {
+): Promise<{ success: boolean, message: string; }> {
     try {
         if (dbConnection) {
             let tableName = getDataTableName(type);
@@ -494,10 +494,10 @@ async function deleteData(
                 { a: id },
                 { a: VARCHAR },
             );
-            if(deleteResult) {
-                return {success: true, message: "Data deleted successfully"};
+            if (deleteResult) {
+                return { success: true, message: "Data deleted successfully" };
             } else {
-                return {success: false, message: "Something went wrong"};
+                return { success: false, message: "Something went wrong" };
             }
         } else {
             throw new Error("DB connection or VaultDEK not found in deleteData");
@@ -607,6 +607,40 @@ async function fetchData(
     }
 }
 
+async function searchData(
+    _event: IpcMainInvokeEvent,
+    searchInput: string,
+    type: DataType,
+    pageNum: number,
+    pageSize: number,
+    sortingOrder: "ASC" | "DESC" = "ASC"
+) {
+    try {
+        if (dbConnection) {
+            const columnName = "last_modified";
+            const tableName = getDataTableName(type);
+            let offset = (pageNum - 1) * pageSize;
+            if (type === "password") {
+                const passwordSearchQuery = `SELECT id, title, category, icon_hint, is_favorite, url, last_modified FROM ${tableName} WHERE title LIKE $searchTitle OR url LIKE $searchUrl ORDER BY ${columnName} ${sortingOrder} LIMIT $limit OFFSET $offset`;
+                const passwordSearchQueryResult = await dbConnection.run(passwordSearchQuery, { searchTitle: `%${searchInput}%`, searchUrl: `%${searchInput}%`, limit: pageSize, offset }, { searchTitle: VARCHAR, searchUrl: VARCHAR, limit: INTEGER, offset: INTEGER });
+                const queryResultInJson = await passwordSearchQueryResult.getRowObjectsJson();
+                return {
+                    rows: queryResultInJson,
+                    totalEntries: queryResultInJson.length,
+                    type: tableName,
+                };
+            } else {
+                // searchQuery = `SELECT * FROM ${tableName} WHERE `;
+            }
+        } else {
+            console.log("Db connection not found");
+        }
+    } catch (error) {
+        console.log(error, 'where @searchData');
+    }
+
+}
+
 // async function connectToCloud(
 //     _event: IpcMainInvokeEvent,
 //     cloudDrive: CloudDrive,
@@ -668,7 +702,7 @@ async function fetchData(
 //     }
 // }
 
-async function importGDriveData(_event: IpcMainInvokeEvent, masterPassword: string): Promise<{ success: boolean, message: string }> {
+async function importGDriveData(_event: IpcMainInvokeEvent, masterPassword: string): Promise<{ success: boolean, message: string; }> {
     try {
         const auth = await getGoogleAuthClient();
         // auth may come from a different installed copy of google-auth-library
@@ -714,7 +748,7 @@ async function importGDriveData(_event: IpcMainInvokeEvent, masterPassword: stri
             return mergeResponse;
         }
         if (choice.response === 1) {
-            const replaceLocalFileResponse = await replaceLocalFileWithCloud(VAULT_PATH, TEMP_VAULT_PATH, dbEncryptionKey.toString("hex"))
+            const replaceLocalFileResponse = await replaceLocalFileWithCloud(VAULT_PATH, TEMP_VAULT_PATH, dbEncryptionKey.toString("hex"));
             await fs.promises.unlink(TEMP_VAULT_PATH);
             return replaceLocalFileResponse;
         }
@@ -731,7 +765,7 @@ async function importGDriveData(_event: IpcMainInvokeEvent, masterPassword: stri
         };
     } catch (error) {
         console.log({ error, where: importGDriveData });
-        throw new Error("Something went wrong!")
+        throw new Error("Something went wrong!");
     }
 }
 
@@ -825,7 +859,7 @@ function showGoogleAuthWindow(oAuth2Client: OAuth2Client): Promise<OAuth2Client>
     });
 }
 
-async function checkTokenValidity(): Promise<{ isTokenValid: boolean, message: string }> {
+async function checkTokenValidity(): Promise<{ isTokenValid: boolean, message: string; }> {
     try {
         const oAuth2Client = new OAuth2Client({
             clientId: CLIENT_ID,
@@ -842,22 +876,22 @@ async function checkTokenValidity(): Promise<{ isTokenValid: boolean, message: s
                 return {
                     isTokenValid: true,
                     message: "Token refreshed successfully",
-                }
+                };
             } else {
                 return {
                     isTokenValid: false,
                     message: "Token refreshed failed"
-                }
+                };
             }
         } else {
             return {
                 isTokenValid: false,
                 message: "Token not found!",
-            }
+            };
         }
     } catch (error: any) {
         console.error({ error, where: "@checkTokenValidity" });
-        throw new Error("Need to handel the error")
+        throw new Error("Need to handel the error");
     }
 }
 
@@ -983,7 +1017,7 @@ function getRandomFileName() {
     return firstPart + middlePart + lastPart;
 }
 
-async function backupToDrive(): Promise<{ success: boolean, message: string }> {
+async function backupToDrive(): Promise<{ success: boolean, message: string; }> {
     try {
         const auth = await getGoogleAuthClient();
         const drive = googleDrive({ version: "v3", auth: auth as unknown as any });
@@ -1136,7 +1170,7 @@ async function handleMergeOrReplaceWithRetry(
     localPath: string,
     cloudPath: string,
     dbEncryptionKey: string
-): Promise<{ success: boolean, message: string }> {
+): Promise<{ success: boolean, message: string; }> {
     const MAX_ATTEMPTS = 3;
     let attempts = 0;
     try {
@@ -1160,7 +1194,7 @@ async function replaceLocalFileWithCloud(
     localPath: string,
     cloudPath: string,
     dbEncryptionKey: string,
-): Promise<{ success: boolean, message: string }> {
+): Promise<{ success: boolean, message: string; }> {
     const MAX_ATTEMPTS = 3;
     let attempts = 0;
     let backupPath: string | null = null;
@@ -1230,7 +1264,7 @@ async function replaceLocalFileWithCloud(
     }
 }
 
-async function checkExistingBackup(_event: IpcMainInvokeEvent): Promise<{ isBackupPresent: boolean, data: drive_v3.Schema$File[] | null, message: string }> {
+async function checkExistingBackup(_event: IpcMainInvokeEvent): Promise<{ isBackupPresent: boolean, data: drive_v3.Schema$File[] | null, message: string; }> {
     try {
         const auth = await getGoogleAuthClient();
         const drive = googleDrive({ version: "v3", auth: auth as unknown as any });
@@ -1242,13 +1276,13 @@ async function checkExistingBackup(_event: IpcMainInvokeEvent): Promise<{ isBack
                 isBackupPresent: false,
                 data: null,
                 message: "No backup found!"
-            }
+            };
         } else {
             return {
                 isBackupPresent: true,
                 data: backups,
                 message: "Backup found"
-            }
+            };
         }
     } catch (error: any) {
         console.error(error);
@@ -1256,7 +1290,7 @@ async function checkExistingBackup(_event: IpcMainInvokeEvent): Promise<{ isBack
     }
 }
 
-async function openLocalBackup(): Promise<{ success: boolean, message: string }> {
+async function openLocalBackup(): Promise<{ success: boolean, message: string; }> {
     try {
         const chosenFileArray = dialog.showOpenDialogSync(mainWindow!, {
             title: "Choose your backup vault file",
@@ -1282,10 +1316,10 @@ async function openLocalBackup(): Promise<{ success: boolean, message: string }>
             return {
                 success: false,
                 message: "File selection cancelled!"
-            }
+            };
         }
     } catch (error: any) {
-        console.log({ error, where: "@openLocalBackup" })
+        console.log({ error, where: "@openLocalBackup" });
         throw new Error(error.message);
     }
 }
@@ -1294,7 +1328,7 @@ async function openCloudBackup(
     _event: Electron.IpcMainInvokeEvent,
     backupFileId: string,
     backupFileName: string
-): Promise<{ success: boolean, message: string }> {
+): Promise<{ success: boolean, message: string; }> {
     try {
         const auth = await getGoogleAuthClient();
         const drive = googleDrive({ version: "v3", auth: auth as unknown as any });
@@ -1308,13 +1342,13 @@ async function openCloudBackup(
                     reject(error);
                 }
             });
-        })
+        });
     } catch (error) {
         return await handelError(error, "Import", "@openCloudBackup", "Backup import failed!");
     }
 }
 
-async function exportVault(): Promise<{ success: boolean, message: string }> {
+async function exportVault(): Promise<{ success: boolean, message: string; }> {
     try {
         if (dbConnection) {
             dbConnection.closeSync();
@@ -1331,7 +1365,7 @@ async function exportVault(): Promise<{ success: boolean, message: string }> {
             return {
                 success: false,
                 message: "Folder selection cancelled!"
-            }
+            };
         }
         const zip = new AdmZip();
         zip.addLocalFile(VAULT_PATH);
@@ -1343,29 +1377,29 @@ async function exportVault(): Promise<{ success: boolean, message: string }> {
             return {
                 success: false,
                 message: "Export failed!"
-            }
+            };
         }
         if (!vaultDEK) throw new Error("Something went wrong!");
-        await initializeDbConnection(vaultDEK.toString("hex"))
+        await initializeDbConnection(vaultDEK.toString("hex"));
         return {
             success: true,
             message: "Export successful!"
-        }
+        };
     } catch (error: any) {
         console.log({ error, where: "@exportVault" });
         throw new Error(error?.message);
     }
 }
 
-async function handelError(error: any, type: string, where: string, rendererMessage?: string): Promise<{ success: boolean, message: string }> {
+async function handelError(error: any, type: string, where: string, rendererMessage?: string): Promise<{ success: boolean, message: string; }> {
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorStack = error instanceof Error ? error.stack : 'No stack trace available';
-    await logToFile(rendererMessage ?? errorMessage, where, errorStack)
+    await logToFile(rendererMessage ?? errorMessage, where, errorStack);
     dialog.showErrorBox(`${type} Error Occurred`, rendererMessage ?? errorMessage);
     return {
         success: false,
         message: rendererMessage ?? errorMessage,
-    }
+    };
 }
 
 async function logToFile(message: string, where: string, errorStack?: string) {

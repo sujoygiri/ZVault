@@ -24,6 +24,7 @@ export interface IElectronAPI {
     editData: (updatedData: PasswordDetails | TextDetails, pageNum: number, pageSize: number) => Promise<ResponsePayload>;
     decryptSensitiveData: (id: string, type: DataType) => Promise<string>,
     fetchData: (type: DataType, pageNum: number, pageSize: number) => Promise<ResponsePayload>,
+    searchData: (searchInput: string, type: DataType, pageNum: number, pageSize: number) => Promise<ResponsePayload>,
     connectToCloud: (cloudDrive: CloudDrive, masterPassword: string) => Promise<any>,
     cloudSyncPasswordError: (callback: (errMessage: string) => void) => Electron.IpcRenderer,
     cloudSyncPasswordSubmit: (password: string) => void,
