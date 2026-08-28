@@ -47,7 +47,7 @@ export class AddData implements OnInit {
   includeSymbols = signal<boolean>(true);
 
   // Categories list
-  categories = ['General', 'Work', 'Personal', 'Finance', 'Social'];
+  categories = ['General', 'Work', 'Personal', 'Finance', 'Social', 'Entertainment'];
 
   // forms
   passwordForm!: FormGroup;

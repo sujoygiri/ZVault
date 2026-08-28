@@ -24,7 +24,7 @@ import argon2 from "@node-rs/argon2";
 import { drive_v3, drive as googleDrive } from "@googleapis/drive";
 import { OAuth2Client } from "google-auth-library";
 import AdmZip from "adm-zip";
-import { DataTables, DataType, NewPassword, NewText, PasswordDetails, TextDetails } from "../shared/api.types";
+import { Categories, DataTables, DataType, NewPassword, NewText, PasswordDetails, TextDetails } from "../shared/api.types";
 
 const rawCredentials: any = fs.readFileSync(path.join(__dirname, "../../credential.env"), "utf8");
 const credential: { CLIENT_ID: string, CLIENT_SECRET: string; } = JSON.parse(rawCredentials);
@@ -609,6 +609,7 @@ async function fetchData(
 
 async function searchData(
     _event: IpcMainInvokeEvent,
+    category: Categories,
     searchInput: string,
     type: DataType,
     pageNum: number,
@@ -620,9 +621,14 @@ async function searchData(
             const columnName = "last_modified";
             const tableName = getDataTableName(type);
             let offset = (pageNum - 1) * pageSize;
+            let passwordSearchQueryResult: DuckDBMaterializedResult;
             if (type === "password") {
-                const passwordSearchQuery = `SELECT id, title, category, icon_hint, is_favorite, url, last_modified FROM ${tableName} WHERE title LIKE $searchTitle OR url LIKE $searchUrl ORDER BY ${columnName} ${sortingOrder} LIMIT $limit OFFSET $offset`;
-                const passwordSearchQueryResult = await dbConnection.run(passwordSearchQuery, { searchTitle: `%${searchInput}%`, searchUrl: `%${searchInput}%`, limit: pageSize, offset }, { searchTitle: VARCHAR, searchUrl: VARCHAR, limit: INTEGER, offset: INTEGER });
+                let passwordSearchQuery = `SELECT id, title, category, icon_hint, is_favorite, url, last_modified FROM ${tableName} WHERE ` + `(title LIKE $searchTitle OR url LIKE $searchUrl)` + `${category ? ' AND category = $searchCategory' : ' '} ` + `ORDER BY ${columnName} ${sortingOrder} LIMIT $limit OFFSET $offset`;
+                if (category) {
+                    passwordSearchQueryResult = await dbConnection.run(passwordSearchQuery, { searchCategory: category, searchTitle: `%${searchInput}%`, searchUrl: `%${searchInput}%`, limit: pageSize, offset }, { searchCategory: VARCHAR, searchTitle: VARCHAR, searchUrl: VARCHAR, limit: INTEGER, offset: INTEGER });
+                } else {
+                    passwordSearchQueryResult = await dbConnection.run(passwordSearchQuery, { searchTitle: `%${searchInput}%`, searchUrl: `%${searchInput}%`, limit: pageSize, offset }, { searchTitle: VARCHAR, searchUrl: VARCHAR, limit: INTEGER, offset: INTEGER });
+                }
                 const queryResultInJson = await passwordSearchQueryResult.getRowObjectsJson();
                 return {
                     rows: queryResultInJson,

@@ -63,13 +63,11 @@
             <!-- Filter Dropdown -->
             <div class="relative min-w-32">
                 <select
-                    class="w-full appearance-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-2.5 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm font-medium text-slate-700 dark:text-slate-300 transition shadow-sm cursor-pointer">
-                    <option class="bg-white dark:bg-slate-900">All</option>
-                    <option class="bg-white dark:bg-slate-900">Work</option>
-                    <option class="bg-white dark:bg-slate-900">Finance</option>
-                    <option class="bg-white dark:bg-slate-900">Social</option>
-                    <option class="bg-white dark:bg-slate-900">Entertainment
-                    </option>
+                    class="w-full appearance-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-2.5 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm font-medium text-slate-700 dark:text-slate-300 transition shadow-sm cursor-pointer" (change)="handleCategoryChange($event)">
+                    <option class="bg-white dark:bg-slate-900" [defaultSelected]="true" [value]="''">All</option>
+                    @for (cat of categories; track $index) {
+                        <option class="bg-white dark:bg-slate-900" [value]="cat">{{cat}}</option>
+                    }
                 </select>
                 <span
                     class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-400 dark:text-slate-500">

@@ -20,19 +20,19 @@
         (deletePassword)="openDeleteConfirmationModal($event.id, $event.title, $event.type)"
         >
       </app-password-view>
-      } @else if (selectedMenuItem() === 'texts') {
+      } 
+      @if (selectedMenuItem() === 'texts') {
 
-      } @else if (selectedMenuItem() === 'settings') {
+      } 
+      @if (selectedMenuItem() === 'settings') {
       <app-settings (toggleTheme)="toggleTheme()"
         (addSetting)="handleSettingsAdd()">
       </app-settings>
-      } @else {
-        
       }
     </div>
 
     <!-- GLOBAL PAGINATION FOOTER -->
-    @if (vaultItemPasswords().length) {
+    @if (selectedMenuItem() !== 'settings') {
     <div
       class="shrink-0 px-10 py-3 bg-transparent border-t border-slate-200/50 dark:border-slate-800/50">
       <app-pagination [totalEntries]="globalService.totalEntries()"
