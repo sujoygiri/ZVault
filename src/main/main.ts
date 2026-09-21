@@ -21,17 +21,13 @@ import {
     VARCHAR,
 } from "@duckdb/node-api";
 import argon2 from "@node-rs/argon2";
-import { drive_v3, drive as googleDrive } from "@googleapis/drive";
-import { OAuth2Client } from "google-auth-library";
+import { drive_v3, google } from "googleapis";
 import AdmZip from "adm-zip";
-import { Categories, DataTables, DataType, NewPassword, NewText, PasswordDetails, TextDetails } from "../shared/api.types";
+import { Categories, CloudDrive, DataTables, DataType, NewPassword, NewText, PasswordDetails, SortingOrder, TextDetails } from "../shared/api.types";
 
 const rawCredentials: any = fs.readFileSync(path.join(__dirname, "../../credential.env"), "utf8");
-const credential: { CLIENT_ID: string, CLIENT_SECRET: string; } = JSON.parse(rawCredentials);
-const CLIENT_ID = credential.CLIENT_ID;
-const CLIENT_SECRET = credential.CLIENT_SECRET;
-const REDIRECT_URI = 'http://localhost';
-const SCOPES = ["https://www.googleapis.com/auth/drive.file"];
+const credential: { APP_TOKEN: string; } = JSON.parse(rawCredentials);
+const SERVER_URL = "https://zvaultoauthserver-production.up.railway.app";
 const USER_DATA_PATH = app.getPath("userData");
 const TOKEN_PATH = path.join(USER_DATA_PATH, 'drive-token.enc');
 const VAULT_PATH = path.join(USER_DATA_PATH, 'vault.db');
@@ -130,14 +126,15 @@ app.whenReady().then(() => {
     ipcMain.handle("decryptSensitiveData", decryptSensitiveData);
     ipcMain.handle("fetchData", fetchData);
     ipcMain.handle("searchData", searchData);
-    // ipcMain.handle("connectToCloud", connectToCloud);
-    ipcMain.handle("importCloudBackup", importGDriveData);
-    ipcMain.handle("checkExistingBackup", checkExistingBackup);
-    ipcMain.handle("checkTokenValidity", checkTokenValidity);
+    ipcMain.handle("connectToCloud", connectToCloud);
+    ipcMain.handle("mergeGoogleCloudBackupFile", mergeGoogleCloudBackupFile);
+    // ipcMain.handle("importCloudBackup", importGDriveData);
+    // ipcMain.handle("checkExistingBackup", connectToGoogleDrive);
+    // ipcMain.handle("checkTokenValidity", checkTokenValidity);
     ipcMain.handle("openLocalBackup", openLocalBackup);
-    ipcMain.handle("exportVault", exportVault);
-    ipcMain.handle("backupToDrive", backupToDrive);
-    ipcMain.handle("openCloudBackup", openCloudBackup);
+    ipcMain.handle("exportVaultLocally", exportVaultLocally);
+    // ipcMain.handle("backupToDrive", backupToDrive);
+    // ipcMain.handle("openCloudBackup", openCloudBackup);
 }).then(() => {
     createWindow();
 });
@@ -258,6 +255,19 @@ function decryptData(
     return decryptedData;
 }
 
+async function getTotalDataCount(tableName: DataTables) {
+    if (dbConnection) {
+        const fetchRowsCountQuery =
+            await dbConnection.run(`SELECT COUNT(*) as total_rows FROM vault.${tableName}`);
+        const tableRowsCountInJson =
+            await fetchRowsCountQuery.getRowObjectsJson();
+        const tableRowsCount = Number(tableRowsCountInJson[0]["total_rows"]);
+        return tableRowsCount;
+    } else {
+        throw new Error("Connection not found @getTotalDataCount");
+    }
+}
+
 async function getTableData(
     tableName: DataTables,
     columnName: string,
@@ -268,11 +278,7 @@ async function getTableData(
     try {
         let offset = (pageNum - 1) * pageSize;
         if (dbConnection) {
-            const fetchRowsCountQuery =
-                await dbConnection.run(`SELECT COUNT(*) as total_rows FROM vault.${tableName}`);
-            const tableRowsCountInJson =
-                await fetchRowsCountQuery.getRowObjectsJson();
-            const totalTableRowsCount = Number(tableRowsCountInJson[0]["total_rows"]);
+            const totalTableRowsCount = await getTotalDataCount(tableName);
             if (totalTableRowsCount !== 0 && totalTableRowsCount > pageSize && offset === totalTableRowsCount) offset = (pageNum - 2) * pageSize;
             let fetchTableRowsQuery: DuckDBMaterializedResult | null = null;
             if (tableName === "accounts") {
@@ -509,13 +515,10 @@ async function deleteData(
 
 async function editData(
     _event: IpcMainInvokeEvent,
-    updatedData: PasswordDetails | TextDetails,
-    pageNum: number,
-    pageSize: number,
+    updatedData: PasswordDetails | TextDetails
 ) {
     try {
         if (dbConnection && vaultDEK) {
-            let columnName: string = "id";
             let tableName = getDataTableName(updatedData.type);
             if (updatedData.type === "password") {
                 const sensitivePasswordData = {
@@ -530,7 +533,7 @@ async function editData(
                     "hex",
                 );
                 await dbConnection.run(
-                    `UPDATE ${tableName} SET iv = $v, tag = $g, title = $t, category = $c, encrypted_data = $e, url = $u, icon_hint = $i, is_favorite = $f
+                    `UPDATE ${tableName} SET iv = $v, tag = $g, title = $t, category = $c, encrypted_data = $e, url = $u, icon_hint = $i, is_favorite = $f, last_modified = NOW()
                     WHERE id = $d`,
                     {
                         v: encryptedPasswordMetadata.IV, g: encryptedPasswordMetadata.TAG, t: updatedData.title, c: updatedData.category, e: encryptedPasswordMetadata.encryptedData, u: updatedData.url, i: updatedData.icon_hint, f: updatedData.is_favorite, d: updatedData.id
@@ -555,7 +558,8 @@ async function editData(
                         title          = $t,
                         category       = $c,
                         encrypted_data = $e,
-                        is_favorite    = $f
+                        is_favorite    = $f,
+                        last_modified  = NOW()
                     WHERE id = $d`,
                     {
                         v: encryptedTextMetadata.IV,
@@ -577,15 +581,9 @@ async function editData(
                     },
                 );
             }
-            return await getTableData(
-                tableName,
-                columnName,
-                pageNum,
-                pageSize,
-                "ASC",
-            );
+            return { success: true, message: 'Data updated successfully' };
         } else {
-            throw new Error("Something went wrong @editData");
+            return { success: false, message: 'Something went wrong @editData' };
         }
     } catch (error) {
         throw new Error("Something went wrong!");
@@ -599,12 +597,35 @@ async function fetchData(
     pageSize: number,
 ) {
     try {
-        let columnName: string = "id";
+        let columnName: string = "last_modified";
         let tableName = getDataTableName(type);
         return await getTableData(tableName, columnName, pageNum, pageSize, "ASC");
     } catch (error) {
         throw new Error("Something went wrong!");
     }
+}
+
+function getSortingColumnAndOrder(sortingValue: SortingOrder) {
+    const values = sortingValue.split('_');
+    let columnName = values[0];
+    let order = values[1];
+    switch (columnName) {
+        case 'name':
+            columnName = 'title';
+            break;
+        case 'date':
+            columnName = 'last_modified';
+            break;
+        default:
+            columnName = 'title';
+            break;
+    }
+    console.log({ columnName, order });
+
+    return {
+        columnName,
+        order: order.toUpperCase()
+    };
 }
 
 async function searchData(
@@ -614,29 +635,58 @@ async function searchData(
     type: DataType,
     pageNum: number,
     pageSize: number,
-    sortingOrder: "ASC" | "DESC" = "ASC"
+    sortingOrder: SortingOrder
 ) {
     try {
         if (dbConnection) {
-            const columnName = "last_modified";
             const tableName = getDataTableName(type);
+            const { columnName, order } = getSortingColumnAndOrder(sortingOrder);
             let offset = (pageNum - 1) * pageSize;
             let passwordSearchQueryResult: DuckDBMaterializedResult;
+            let searchPasswordCountQueryResult: DuckDBMaterializedResult;
+            let dataToBeReturned = ``;
+            let columnToBeSearched = ``;
             if (type === "password") {
-                let passwordSearchQuery = `SELECT id, title, category, icon_hint, is_favorite, url, last_modified FROM ${tableName} WHERE ` + `(title LIKE $searchTitle OR url LIKE $searchUrl)` + `${category ? ' AND category = $searchCategory' : ' '} ` + `ORDER BY ${columnName} ${sortingOrder} LIMIT $limit OFFSET $offset`;
+                dataToBeReturned = `id, title, category, icon_hint, is_favorite, url, last_modified`;
+                columnToBeSearched = `(title LIKE $searchTitle OR url LIKE $searchUrl)`;
+            }
+            if (type === 'text') {
+                dataToBeReturned = `id, title, category, is_favorite, last_modified`;
+                columnToBeSearched = `title LIKE $searchTitle`;
+            }
+            let passwordSearchQuery = `SELECT ${dataToBeReturned} FROM ${tableName} WHERE ` + columnToBeSearched + `${category ? ' AND category = $searchCategory' : ' '} ` + `ORDER BY ${columnName} ${order} LIMIT $limit OFFSET $offset`;
+            let searchPasswordCountQuery = `SELECT COUNT(*) AS total_count FROM ${tableName} WHERE ` + columnToBeSearched + `${category ? ' AND category = $searchCategory' : ''}`;
+            if (type === 'password') {
                 if (category) {
                     passwordSearchQueryResult = await dbConnection.run(passwordSearchQuery, { searchCategory: category, searchTitle: `%${searchInput}%`, searchUrl: `%${searchInput}%`, limit: pageSize, offset }, { searchCategory: VARCHAR, searchTitle: VARCHAR, searchUrl: VARCHAR, limit: INTEGER, offset: INTEGER });
+                    searchPasswordCountQueryResult = await dbConnection.run(searchPasswordCountQuery, { searchCategory: category, searchTitle: `%${searchInput}%`, searchUrl: `%${searchInput}%` }, { searchCategory: VARCHAR, searchTitle: VARCHAR, searchUrl: VARCHAR });
                 } else {
                     passwordSearchQueryResult = await dbConnection.run(passwordSearchQuery, { searchTitle: `%${searchInput}%`, searchUrl: `%${searchInput}%`, limit: pageSize, offset }, { searchTitle: VARCHAR, searchUrl: VARCHAR, limit: INTEGER, offset: INTEGER });
+                    searchPasswordCountQueryResult = await dbConnection.run(searchPasswordCountQuery, { searchTitle: `%${searchInput}%`, searchUrl: `%${searchInput}%` }, { searchTitle: VARCHAR, searchUrl: VARCHAR });
                 }
                 const queryResultInJson = await passwordSearchQueryResult.getRowObjectsJson();
+                const totalMatchingPasswords = await searchPasswordCountQueryResult.getRowObjectsJson();
                 return {
                     rows: queryResultInJson,
-                    totalEntries: queryResultInJson.length,
+                    totalEntries: totalMatchingPasswords[0]['total_count'],
                     type: tableName,
                 };
-            } else {
-                // searchQuery = `SELECT * FROM ${tableName} WHERE `;
+            }
+            if (type === 'text') {
+                if (category) {
+                    passwordSearchQueryResult = await dbConnection.run(passwordSearchQuery, { searchCategory: category, searchTitle: `%${searchInput}%`, limit: pageSize, offset }, { searchCategory: VARCHAR, searchTitle: VARCHAR, limit: INTEGER, offset: INTEGER });
+                    searchPasswordCountQueryResult = await dbConnection.run(searchPasswordCountQuery, { searchCategory: category, searchTitle: `%${searchInput}%` }, { searchCategory: VARCHAR, searchTitle: VARCHAR });
+                } else {
+                    passwordSearchQueryResult = await dbConnection.run(passwordSearchQuery, { searchTitle: `%${searchInput}%`, limit: pageSize, offset }, { searchTitle: VARCHAR, limit: INTEGER, offset: INTEGER });
+                    searchPasswordCountQueryResult = await dbConnection.run(searchPasswordCountQuery, { searchTitle: `%${searchInput}%` }, { searchTitle: VARCHAR });
+                }
+                const queryResultInJson = await passwordSearchQueryResult.getRowObjectsJson();
+                const totalMatchingPasswords = await searchPasswordCountQueryResult.getRowObjectsJson();
+                return {
+                    rows: queryResultInJson,
+                    totalEntries: totalMatchingPasswords[0]['total_count'],
+                    type: tableName,
+                };
             }
         } else {
             console.log("Db connection not found");
@@ -647,289 +697,180 @@ async function searchData(
 
 }
 
-// async function connectToCloud(
-//     _event: IpcMainInvokeEvent,
-//     cloudDrive: CloudDrive,
-//     masterPassword: string,
-// ) {
-//     switch (cloudDrive) {
-//         case "googleDrive":
-//             return await syncWithGoogleDrive(masterPassword);
-//         case "oneDrive":
-//             break;
-//         case "dropBox":
-//             break;
-//         default:
-//             break;
-//     }
-// }
+async function connectToCloud(
+    _event: IpcMainInvokeEvent,
+    cloudDrive: CloudDrive,
+) {
+    switch (cloudDrive) {
+        case "googleDrive":
+            return await connectToGoogleDrive();
+        case "oneDrive":
+            break;
+        case "dropBox":
+            break;
+        default:
+            break;
+    }
+}
 
-// async function syncWithGoogleDrive(masterPassword: string): Promise<{ success: boolean; message: string }> {
-//     try {
-//         const auth = await getGoogleAuthClient();
-//         const drive = googleDrive({ version: "v3", auth });
-//         const folderId = await getOrCreateBackupFolder(drive);
-//         const appData = await getAppData();
-//         const dbEncryptionKey = await deriveMasterKey(
-//             masterPassword,
-//             Buffer.from(appData.dbEncryptionKeySalt, "hex"),
-//         );
-//         const backupToDriveResponse = await backupToDrive(drive, folderId);
-//         if (!dbConnection) {
-//             const dbInstance = await DuckDBInstance.create();
-//             dbConnection = await dbInstance.connect();
-//             await dbConnection.run(
-//                 `ATTACH '${VAULT_PATH}' AS vault (ENCRYPTION_KEY '${dbEncryptionKey.toString("hex")}', ENCRYPTION_CIPHER 'GCM')`,
-//             );
-//             await dbConnection.run(`USE vault`);
-//         }
-//         if (backupToDriveResponse.success) {
-//             dialog.showMessageBoxSync(mainWindow!, {
-//                 title: "Sync",
-//                 message: "Sync successful!",
-//                 type: "info",
-//             });
-//         }
-//         return backupToDriveResponse;
-//     } catch (error: any) {
-//         console.error('Sync failed:', error);
-//         if (error.message.includes("Invalid byte encountered in STRING")) {
-
-//         }
-//         // If token is invalid/expired, delete it to force re-auth
-//         if (error.message?.includes('invalid_grant') || error.response?.data?.error === 'invalid_grant') {
-//             if (fs.existsSync(TOKEN_PATH)) {
-//                 fs.unlinkSync(TOKEN_PATH);
-//                 console.log('Invalid token removed re-authenticate next time');
-//             }
-//         }
-//         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-//         return { success: false, message: `Sync failed: ${errorMessage}` };
-//     }
-// }
-
-async function importGDriveData(_event: IpcMainInvokeEvent, masterPassword: string): Promise<{ success: boolean, message: string; }> {
+async function connectToGoogleDrive() {
     try {
-        const auth = await getGoogleAuthClient();
-        // auth may come from a different installed copy of google-auth-library
-        // Cast to any to avoid incompatible OAuth2Client types across packages
-        const drive = googleDrive({ version: "v3", auth: auth as unknown as any });
-        const folderId = await getOrCreateBackupFolder(drive);
-        // List existing backups (newest first)
-        const backups = await listBackups(drive, folderId);
-        if (backups.length === 0) {
-            dialog.showErrorBox("Import Error", "No backup found in Google Drive!");
-            return {
-                success: false,
-                message: 'No backup found in Google Drive!'
-            };
-        }
-        const appData = await getAppData();
-        const dbEncryptionKey = await deriveMasterKey(
-            masterPassword,
-            Buffer.from(appData.dbEncryptionKeySalt, "hex"),
-        );
-        // In case there is at least one backup
-        const latest = backups[0];
-        await downloadBackupFile(drive, latest.id!, TEMP_VAULT_PATH);
-        // Ask user what to do
-        const choice = await dialog.showMessageBox(mainWindow!, {
-            type: 'question',
-            title: 'Cloud Backup Found',
-            message: `A backup (${latest.name}) was found on Google Drive.`,
-            detail: 'What would you like to do?',
-            buttons: ['Merge cloud into local', 'Replace local with cloud', 'Cancel'],
-            defaultId: 0, // default to Merge
-            cancelId: 2,
-        });
-        if (choice.response === 0) {
-            // Merge the cloud backup with local file
-            const mergeResponse = await handleMergeOrReplaceWithRetry(
-                VAULT_PATH,
-                TEMP_VAULT_PATH,
-                dbEncryptionKey.toString("hex")
-            );
-            await fs.promises.unlink(TEMP_VAULT_PATH);
-            dialog.showMessageBoxSync(mainWindow!, { type: mergeResponse.success ? 'info' : 'error', message: mergeResponse.message });
-            return mergeResponse;
-        }
-        if (choice.response === 1) {
-            const replaceLocalFileResponse = await replaceLocalFileWithCloud(VAULT_PATH, TEMP_VAULT_PATH, dbEncryptionKey.toString("hex"));
-            await fs.promises.unlink(TEMP_VAULT_PATH);
-            return replaceLocalFileResponse;
-        }
-        if (choice.response === 2) {
-            await fs.promises.unlink(TEMP_VAULT_PATH);
-            return {
-                success: false,
-                message: 'Sync cancelled by user.',
-            };
-        }
-        return {
-            success: false,
-            message: 'Sync cancelled by user.',
-        };
-    } catch (error) {
-        console.log({ error, where: importGDriveData });
-        throw new Error("Something went wrong!");
-    }
-}
-
-function getDeviceFingerprint() {
-    const osNetworks = os.networkInterfaces();
-    const firstNetworkName = Object.keys(osNetworks)[0];
-    const firstNetworkDetails = osNetworks[firstNetworkName];
-    const firstNetworkMacAddress = firstNetworkDetails ? firstNetworkDetails[0]['mac'] : 'not-found';
-    const parts = [
-        os.hostname(),
-        os.userInfo().username,
-        os.arch(),
-        os.cpus()[0]?.model || 'unknown',
-        firstNetworkMacAddress,
-    ];
-    return crypto.createHash('sha256', { outputLength: 32 }).update(parts.join('-')).digest();
-}
-
-async function storeAuthToken(token: string) {
-    if (safeStorage.isEncryptionAvailable()) {
-        const encryptedTokenBuffer = safeStorage.encryptString(token);
-        await fs.promises.writeFile(TOKEN_PATH, encryptedTokenBuffer);
-    } else {
-        const deviceFingerPrint = getDeviceFingerprint();
-        const encryptedToken = encryptData(token, deviceFingerPrint, "utf8", "hex");
-        await fs.promises.writeFile(TOKEN_PATH, JSON.stringify(encryptedToken));
-    }
-}
-
-async function getAuthToken() {
-    const rawTokenData: any = await fs.promises.readFile(TOKEN_PATH);
-    if (safeStorage.isEncryptionAvailable()) {
-        // const rawTokenDataToBuffer = Buffer.from(rawTokenData, "hex");
-        return safeStorage.decryptString(rawTokenData);
-    } else {
-        const deviceFingerPrint = getDeviceFingerprint();
-        const { IV, TAG, encryptedData } = rawTokenData;
-        return decryptData(IV, TAG, encryptedData, deviceFingerPrint, "hex", "utf8");
-    }
-}
-
-function showGoogleAuthWindow(oAuth2Client: OAuth2Client): Promise<OAuth2Client> {
-    return new Promise((resolve, reject) => {
-        const authWindow = new BrowserWindow({
-            parent: mainWindow!,
-            width: 800,
-            height: 600,
-            show: true,
-            webPreferences: {
-                nodeIntegration: false,
-                contextIsolation: true,
-            },
-        });
-        const authUrl = oAuth2Client.generateAuthUrl({
-            access_type: "offline",
-            scope: SCOPES,
-            prompt: "consent"
-        });
-        authWindow.loadURL(authUrl).catch((error) => {
-            console.log({ error });
-        });
-        authWindow.webContents.on("will-redirect", async (event, url) => {
-            if (url.startsWith(REDIRECT_URI)) {
-                event.preventDefault();
-                try {
-                    const code = new URL(url).searchParams.get("code");
-                    if (!code) throw new Error('No authorization code received');
-                    const { tokens } = await oAuth2Client.getToken({
-                        code,
-                        redirect_uri: REDIRECT_URI
-                    });
-                    if (!tokens) throw new Error('No tokens received');
-                    oAuth2Client.setCredentials(tokens);
-                    await storeAuthToken(JSON.stringify(tokens));
-                    console.log("Google Drive authenticated successfully");
-                    authWindow.close();
-                    resolve(oAuth2Client);
-                } catch (error) {
-                    authWindow.close();
-                    console.error('Auth error:', error);
-                    console.error('Response data:', (error as any).response?.data);
-                    console.error('Request URL:', (error as any).config?.url);
-                    console.error('Request body:', (error as any).config?.data);
-                    reject(error);
-                }
+        const localStoredToken = await getLocalTokenOrRefreshedToken();
+        if (localStoredToken.exist && localStoredToken.accessToken) {
+            return checkExistingBackup(localStoredToken.accessToken);
+        } else {
+            const newTokenResponse = await getNewToken();
+            if (newTokenResponse && newTokenResponse.accessToken) {
+                return checkExistingBackup(newTokenResponse.accessToken);
+            } else {
+                const error = new Error('Connect to Google failed!');
+                await handelError(error, 'Google Connection', connectToGoogleDrive.name, "Failed to connect with Google account")
             }
-        });
-        authWindow.on("closed", () => {
-            reject(new Error("Authentication window closed by user"));
-        });
+        }
+    } catch (error: any) {
+        console.log(error);
+
+        await handelError(error, 'Google Connection', connectToGoogleDrive.name, "Failed to connect with Google account");
+    }
+}
+
+async function getNewToken(): Promise<{ success: boolean, accessToken: string | null; }> {
+    const verifier = crypto.randomBytes(32).toString('base64url');
+    const challenge = crypto.createHash('sha256').update(verifier).digest('base64url');
+
+    const res = await fetch(`${SERVER_URL}/auth/google/url?code_challenge=${challenge}`, {
+        headers: { 'x-zvault-app-token': credential.APP_TOKEN }
+    });
+
+    // Ensure the initial fetch didn't fail
+    if (!res.ok) throw new Error(`Init failed: ${res.status} ${await res.text()}`);
+
+    const { url, sessionId } = await res.json();
+
+    await shell.openExternal(url);
+    const pollStartTime = Date.now();
+
+    return new Promise((resolve, reject) => {
+        const interval = setInterval(async () => {
+            if (Date.now() - pollStartTime > 300000) {
+                clearInterval(interval);
+                return reject(new Error('Login timed out.'));
+            }
+            try {
+                const exchangeRes = await fetch(`${SERVER_URL}/auth/google/exchange`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'x-zvault-app-token': credential.APP_TOKEN },
+                    body: JSON.stringify({ sessionId, codeVerifier: verifier })
+                });
+
+                // Catch non-200 HTTP responses before attempting to parse JSON
+                if (!exchangeRes.ok) {
+                    const errorText = await exchangeRes.text();
+                    await logToFile(`Poll HTTP Error ${exchangeRes.status}:`, errorText, 'Token polling');
+                    return; // Exit this tick and try again in 2 seconds
+                }
+
+                const data = await exchangeRes.json();
+
+                if (data.tokens) {
+                    clearInterval(interval);
+                    storeAuthToken(JSON.stringify(data.tokens));
+                    resolve({ success: true, accessToken: data.tokens.access_token });
+                }
+            } catch (error) {
+                // Temporarily log network or parsing errors to the console
+                console.error('Fetch or parsing error during polling:', error);
+            }
+        }, 2000);
     });
 }
 
-async function checkTokenValidity(): Promise<{ isTokenValid: boolean, message: string; }> {
-    try {
-        const oAuth2Client = new OAuth2Client({
-            clientId: CLIENT_ID,
-            client_secret: CLIENT_SECRET,
-            redirectUri: REDIRECT_URI,
-        });
-        if (fs.existsSync(TOKEN_PATH)) {
-            const rawToken = await getAuthToken();
-            const localToken = JSON.parse(rawToken);
-            oAuth2Client.setCredentials(localToken);
-            // This will automatically use the refresh_token if access_token is expired
-            const tokenResponse = await oAuth2Client.getAccessToken();
-            if (tokenResponse.res?.ok) {
-                return {
-                    isTokenValid: true,
-                    message: "Token refreshed successfully",
-                };
-            } else {
-                return {
-                    isTokenValid: false,
-                    message: "Token refreshed failed"
-                };
-            }
-        } else {
-            return {
-                isTokenValid: false,
-                message: "Token not found!",
-            };
-        }
-    } catch (error: any) {
-        console.error({ error, where: "@checkTokenValidity" });
-        throw new Error("Need to handel the error");
+async function getLocalTokenOrRefreshedToken(): Promise<{ exist: boolean, accessToken: string | null; }> {
+    const rawTokenData = await getAuthToken();
+    if (!rawTokenData) return { exist: false, accessToken: null };
+    const tokens = JSON.parse(rawTokenData);
+    if (!tokens?.refresh_token) return { exist: false, accessToken: null };
+
+    // Return existing token if valid for >5 more minutes
+    if (Date.now() < (tokens.expiry_date - 300000)) return { exist: true, accessToken: tokens.access_token };
+
+    const res = await fetch(`${SERVER_URL}/auth/google/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-zvault-app-token': credential.APP_TOKEN },
+        body: JSON.stringify({ refreshToken: tokens.refresh_token })
+    });
+
+    if (res.status === 401) {
+        fs.unlinkSync(TOKEN_PATH);
+        throw new Error('REFRESH_TOKEN_EXPIRED');
+    }
+    if (!res.ok) throw new Error('Server error');
+
+    const newTokens = await res.json();
+    storeAuthToken(JSON.stringify(newTokens));
+    return { exist: true, accessToken: newTokens.access_token };
+}
+
+async function checkExistingBackup(accessToken: string): Promise<{ isBackupPresent: boolean, data: drive_v3.Schema$File[] | null, message: string; }> {
+    const authClient = new google.auth.OAuth2();
+    authClient.setCredentials({ access_token: accessToken });
+    const drive = google.drive({ version: "v3", auth: authClient });
+    // List existing backups (newest first)
+    const folderId = await getOrCreateBackupFolder(drive);
+    const backups = await listBackups(drive, folderId);
+    if (backups.length === 0) {
+        return {
+            isBackupPresent: false,
+            data: null,
+            message: "No backup found!"
+        };
+    } else {
+        return {
+            isBackupPresent: true,
+            data: backups,
+            message: "Backup found"
+        };
     }
 }
 
-// need to improve error catch block
-async function getGoogleAuthClient(): Promise<OAuth2Client> {
+
+async function storeAuthToken(token: string) {
     try {
-        const oAuth2Client = new OAuth2Client({
-            clientId: CLIENT_ID,
-            client_secret: CLIENT_SECRET,
-            redirectUri: REDIRECT_URI,
-        });
-        // Load saved token if exists
-        if (fs.existsSync(TOKEN_PATH)) {
-            // const rawTokenData = await fs.promises.readFile(TOKEN_PATH, { encoding: 'utf8' });
-            // const { IV: tokenIV, TAG: tokenTAG, encryptedData: encryptedToken } = JSON.parse(rawTokenData);
-            // if (!vaultDEK) throw new Error("Something went wrong!");
-            // const decryptedToken = JSON.parse(decryptData(tokenIV, tokenTAG, encryptedToken, vaultDEK, "hex", "utf8"));
-            const rawToken = await getAuthToken();
-            const localToken = JSON.parse(rawToken);
-            oAuth2Client.setCredentials(localToken);
-            // This will automatically use the refresh_token if access_token is expired
-            await oAuth2Client.getAccessToken();
-            console.log('Google Drive token loaded and refreshed successfully');
-            return oAuth2Client;
+        if (safeStorage.isEncryptionAvailable()) {
+            const encryptedTokenBuffer = safeStorage.encryptString(token);
+            await fs.promises.writeFile(TOKEN_PATH, encryptedTokenBuffer.toString('hex'), { encoding: 'utf8' });
         } else {
-            return await showGoogleAuthWindow(oAuth2Client);
+            if (vaultDEK) {
+                const encryptedToken = encryptData(token, vaultDEK, "utf8", "hex");
+                await fs.promises.writeFile(TOKEN_PATH, JSON.stringify(encryptedToken), { encoding: 'utf8' });
+            } else {
+                const error = new Error('Token encryption error occurred');
+                await handelError(error, 'Token Encryption', storeAuthToken.name);
+            }
         }
     } catch (error) {
-        console.error({ error, where: "@getGoogleAuthClient" });
-        console.warn('Saved token invalid or expired — will re-authenticate');
-        fs.unlinkSync(TOKEN_PATH); // Remove bad token
-        throw new Error("Something went wrong!");
+        await handelError(error, 'Token Encryption', storeAuthToken.name, 'Something went wrong');
+    }
+}
+
+
+async function getAuthToken() {
+    if (!fs.existsSync(TOKEN_PATH)) return null;
+    try {
+        const rawTokenData = await fs.promises.readFile(TOKEN_PATH, { encoding: 'utf8' });
+        if (safeStorage.isEncryptionAvailable()) {
+            return safeStorage.decryptString(Buffer.from(rawTokenData, 'hex'));
+        } else {
+            if (vaultDEK) {
+                const { IV, TAG, encryptedData } = JSON.parse(rawTokenData);
+                return decryptData(IV, TAG, encryptedData, vaultDEK, "hex", "utf8");
+            } else {
+                const error = new Error('Token encryption error occurred');
+                await handelError(error, 'Token Encryption', storeAuthToken.name);
+            }
+        }
+    } catch (error) {
+        await handelError(error, 'Token Encryption', storeAuthToken.name, 'Something went wrong');
     }
 }
 
@@ -956,28 +897,40 @@ async function getOrCreateBackupFolder(drive: drive_v3.Drive): Promise<string> {
 }
 
 async function listBackups(drive: drive_v3.Drive, folderId: string): Promise<drive_v3.Schema$File[]> {
+    // where name contains 'zvault-backup-' 
+    const response = await drive.files.list({
+        q: `'${folderId}' in parents and mimeType != 'application/vnd.google-apps.folder' and trashed = false`,
+        fields: 'files(id, name, createdTime, mimeType, size)',
+        orderBy: 'createdTime desc',     // newest first
+        pageSize: 100,                    // adjust if you expect more than 100 backups
+        spaces: 'drive',
+        supportsAllDrives: true,
+        includeItemsFromAllDrives: true,
+    });
+    const files = response.data.files || [];
+    return files;
+}
+
+async function mergeGoogleCloudBackupFile(_event: IpcMainInvokeEvent, backFileId: string, backFilename: string, masterPassword: string) {
     try {
-        // and name contains 'zvault-backup-' 
-        const response = await drive.files.list({
-            q: `'${folderId}' in parents and mimeType != 'application/vnd.google-apps.folder' and trashed = false`,
-            fields: 'files(id, name, createdTime, mimeType, size)',
-            orderBy: 'createdTime desc',     // newest first
-            pageSize: 100,                    // adjust if you expect more than 100 backups
-            spaces: 'drive',
-            supportsAllDrives: true,
-            includeItemsFromAllDrives: true,
-        });
-
-        const files = response.data.files || [];
-
-        console.log(`Found ${files.length} backup files in folder ${folderId}`);
-
-        return files;
-    } catch (error: any) {
-        console.error('@listBackups Error listing backups: ', error.message || error);
-        throw new Error(`Failed to list backups: ${error.message || 'Unknown error'}`);
+        const token = await getLocalTokenOrRefreshedToken();
+        if(token.exist && token.accessToken !== null){
+            const authClient = new google.auth.OAuth2();
+            authClient.setCredentials({ access_token: token.accessToken });
+            const drive = google.drive({ version: "v3", auth: authClient });
+            const downloadedPath = await downloadBackupFile(drive, backFileId, backFilename);
+            console.log({downloadedPath, masterPassword});
+            return downloadedPath;
+        } else {
+            const error = new Error("Token not found");
+            await handelError(error, 'TOKEN_NOT_FOUND', mergeGoogleCloudBackupFile.name, 'Auth token missing, Re-authenticate again');
+        }
+    } catch (error) {
+        console.log(error, mergeGoogleCloudBackupFile.name);
+        
     }
 }
+
 
 async function downloadBackupFile(drive: drive_v3.Drive, fileId: string, fileName: string): Promise<string> {
     try {
@@ -1014,6 +967,7 @@ async function downloadBackupFile(drive: drive_v3.Drive, fileId: string, fileNam
 }
 
 function getRandomFileName() {
+    // crypto.randomInt()
     let prefixWord = prefixes[Math.floor(Math.random() * 100)];
     let middleWord = middles[Math.floor(Math.random() * 100)];
     let suffixWord = suffixes[Math.floor(Math.random() * 100)];
@@ -1023,59 +977,83 @@ function getRandomFileName() {
     return firstPart + middlePart + lastPart;
 }
 
-async function backupToDrive(): Promise<{ success: boolean, message: string; }> {
-    try {
-        const auth = await getGoogleAuthClient();
-        const drive = googleDrive({ version: "v3", auth: auth as unknown as any });
-        const folderId = await getOrCreateBackupFolder(drive);
-        if (dbConnection) {
-            dbConnection.closeSync();
-            dbConnection = null;
-        }
-        // const fileName = `${randomFileName}-${new Date().toISOString().replace(/[:.]/g, '-')}-${path.basename(VAULT_PATH)}`;
-        // getAppData()
-        const fileName = getRandomFileName();
-        const tempBackupZipPath = path.join(USER_DATA_PATH, "cloud_backup.zip");
-        const zip = new AdmZip();
-        zip.addLocalFile(VAULT_PATH);
-        zip.addLocalFile(VAULT_DATA_PATH);
-        const exportZipResponse = await zip.writeZipPromise(tempBackupZipPath, {
-            overwrite: true
-        });
-        if (!exportZipResponse) {
-            return await handelError("Backup compression failed. Try again!", "Compression", "@backupToDrive");
-        }
-        if (!vaultDEK) {
-            return await handelError("VaultDek not found", "VaultDek", "@backupToDrive", "Something went wrong. Restart the app!");
-        }
-        await initializeDbConnection(vaultDEK.toString("hex"));
-        const fileStream = fs.createReadStream(tempBackupZipPath);
-        const media = {
-            mimeType: 'application/octet-stream',
-            body: fileStream,
-        };
-        // Upload or update (simple: create new each time with unique name)
-        const createResponse = await drive.files.create({
-            requestBody: {
-                name: fileName,
-                parents: [folderId],
-            },
-            media,
-            fields: 'id,createdTime',
-        });
-        if (createResponse.ok) {
-            await fs.promises.unlink(tempBackupZipPath);
-            console.log(`Backup successful: ${fileName}, id: ${createResponse.data.id}`);
-            await cleanupOldBackups(drive, folderId, 3);
-            return { success: true, message: `Backup successful! - ${createResponse.data.createdTime}` };
-        } else {
-            await fs.promises.unlink(tempBackupZipPath);
-            return { success: false, message: 'Backup failed!' };
-        }
-    } catch (err: any) {
-        return await handelError(err, "Backup", "@backupToDrive", "Google Drive backup failed");
-    }
-}
+// async function backupToDrive(): Promise<{ success: boolean, message: string; }> {
+//     try {
+//         const auth = await getGoogleAuthClient();
+//         const drive = googleDrive({ version: "v3", auth: auth as unknown as any });
+//         const folderId = await getOrCreateBackupFolder(drive);
+//         if (dbConnection) {
+//             dbConnection.closeSync();
+//             dbConnection = null;
+//         }
+//         // const fileName = `${randomFileName}-${new Date().toISOString().replace(/[:.]/g, '-')}-${path.basename(VAULT_PATH)}`;
+//         // getAppData()
+//         const fileName = getRandomFileName();
+//         const tempBackupZipPath = path.join(USER_DATA_PATH, "cloud_backup.zip");
+//         const zip = new AdmZip();
+//         zip.addLocalFile(VAULT_PATH);
+//         zip.addLocalFile(VAULT_DATA_PATH);
+//         const exportZipResponse = await zip.writeZipPromise(tempBackupZipPath, {
+//             overwrite: true
+//         });
+//         if (!exportZipResponse) {
+//             return await handelError("Backup compression failed. Try again!", "Compression", "@backupToDrive");
+//         }
+//         if (!vaultDEK) {
+//             return await handelError("VaultDek not found", "VaultDek", "@backupToDrive", "Something went wrong. Restart the app!");
+//         }
+//         await initializeDbConnection(vaultDEK.toString("hex"));
+//         const fileStream = fs.createReadStream(tempBackupZipPath);
+//         const media = {
+//             mimeType: 'application/octet-stream',
+//             body: fileStream,
+//         };
+//         // Upload or update (simple: create new each time with unique name)
+//         const createResponse = await drive.files.create({
+//             requestBody: {
+//                 name: fileName,
+//                 parents: [folderId],
+//             },
+//             media,
+//             fields: 'id,createdTime',
+//         });
+//         if (createResponse.ok) {
+//             await fs.promises.unlink(tempBackupZipPath);
+//             console.log(`Backup successful: ${fileName}, id: ${createResponse.data.id}`);
+//             await cleanupOldBackups(drive, folderId, 3);
+//             return { success: true, message: `Backup successful! - ${createResponse.data.createdTime}` };
+//         } else {
+//             await fs.promises.unlink(tempBackupZipPath);
+//             return { success: false, message: 'Backup failed!' };
+//         }
+//     } catch (err: any) {
+//         return await handelError(err, "Backup", "@backupToDrive", "Google Drive backup failed");
+//     }
+// }
+
+// async function openCloudBackup(
+//     _event: Electron.IpcMainInvokeEvent,
+//     backupFileId: string,
+//     backupFileName: string
+// ): Promise<{ success: boolean, message: string; }> {
+//     try {
+//         const auth = await getGoogleAuthClient();
+//         const drive = googleDrive({ version: "v3", auth: auth as unknown as any });
+//         const downloadLocation = await downloadBackupFile(drive, backupFileId, backupFileName);
+//         const zip = new AdmZip(downloadLocation);
+//         return new Promise((resolve, reject) => {
+//             zip.extractAllToAsync(USER_DATA_PATH, true, false, async (error) => {
+//                 await fs.promises.unlink(downloadLocation);
+//                 resolve({ success: true, message: "Backup import successful!" });
+//                 if (error) {
+//                     reject(error);
+//                 }
+//             });
+//         });
+//     } catch (error) {
+//         return await handelError(error, "Import", "@openCloudBackup", "Backup import failed!");
+//     }
+// }
 
 async function cleanupOldBackups(drive: drive_v3.Drive, folderId: string, keepLatest: number = 3) {
     try {
@@ -1114,18 +1092,18 @@ async function cleanupOldBackups(drive: drive_v3.Drive, folderId: string, keepLa
     }
 }
 
-async function mergeBackupIntoCurrent(localPath: string, cloudPath: string, dbEncryptionKey: string) {
+async function mergeBackupIntoCurrent(localPath: string, cloudPath: string, dbEncryptionKeyLocal: string, dbEncryptionKeyCloud: string) {
     try {
         // Attach local database if not present
         if (!dbConnection) {
             const localInstance = await DuckDBInstance.create();
             dbConnection = await localInstance.connect();
-            await dbConnection.run(`ATTACH '${localPath}' AS local_db (ENCRYPTION_KEY '${dbEncryptionKey}', ENCRYPTION_CIPHER 'GCM')`);
+            await dbConnection.run(`ATTACH '${localPath}' AS local_db (ENCRYPTION_KEY '${dbEncryptionKeyLocal}', ENCRYPTION_CIPHER 'GCM')`);
         }
 
         // Attach cloud backup
         await dbConnection.run(
-            `ATTACH '${cloudPath}' AS cloud_db (ENCRYPTION_KEY '${dbEncryptionKey}', ENCRYPTION_CIPHER 'GCM')`
+            `ATTACH '${cloudPath}' AS cloud_db (ENCRYPTION_KEY '${dbEncryptionKeyCloud}', ENCRYPTION_CIPHER 'GCM')`
         );
 
         // ───────────────────────────────────────────────
@@ -1172,29 +1150,29 @@ async function mergeBackupIntoCurrent(localPath: string, cloudPath: string, dbEn
     }
 }
 
-async function handleMergeOrReplaceWithRetry(
-    localPath: string,
-    cloudPath: string,
-    dbEncryptionKey: string
-): Promise<{ success: boolean, message: string; }> {
-    const MAX_ATTEMPTS = 3;
-    let attempts = 0;
-    try {
-        await mergeBackupIntoCurrent(localPath, cloudPath, dbEncryptionKey);
-        return { success: true, message: 'Successfully merged cloud backup into local database' };
-    } catch (error: any) {
-        if (error.message.includes('Invalid encryption key') || error.message.includes('decryption')) {
-            attempts++;
-            if (attempts >= MAX_ATTEMPTS) {
-                return { success: false, message: 'Too many incorrect attempts. Merge cancelled.' };
-            }
-        }
-        // Other errors (file not found, schema issue, etc.)
-        return { success: false, message: `Merge failed: ${error.message}` };
-    }
+// async function handleMergeOrReplaceWithRetry(
+//     localPath: string,
+//     cloudPath: string,
+//     dbEncryptionKey: string
+// ): Promise<{ success: boolean, message: string; }> {
+//     const MAX_ATTEMPTS = 3;
+//     let attempts = 0;
+//     try {
+//         await mergeBackupIntoCurrent(localPath, cloudPath, dbEncryptionKey);
+//         return { success: true, message: 'Successfully merged cloud backup into local database' };
+//     } catch (error: any) {
+//         if (error.message.includes('Invalid encryption key') || error.message.includes('decryption')) {
+//             attempts++;
+//             if (attempts >= MAX_ATTEMPTS) {
+//                 return { success: false, message: 'Too many incorrect attempts. Merge cancelled.' };
+//             }
+//         }
+//         // Other errors (file not found, schema issue, etc.)
+//         return { success: false, message: `Merge failed: ${error.message}` };
+//     }
 
-    // return { success: false, message: 'Max attempts reached' };
-}
+//     // return { success: false, message: 'Max attempts reached' };
+// }
 
 async function replaceLocalFileWithCloud(
     localPath: string,
@@ -1270,32 +1248,6 @@ async function replaceLocalFileWithCloud(
     }
 }
 
-async function checkExistingBackup(_event: IpcMainInvokeEvent): Promise<{ isBackupPresent: boolean, data: drive_v3.Schema$File[] | null, message: string; }> {
-    try {
-        const auth = await getGoogleAuthClient();
-        const drive = googleDrive({ version: "v3", auth: auth as unknown as any });
-        // List existing backups (newest first)
-        const folderId = await getOrCreateBackupFolder(drive);
-        const backups = await listBackups(drive, folderId);
-        if (backups.length === 0) {
-            return {
-                isBackupPresent: false,
-                data: null,
-                message: "No backup found!"
-            };
-        } else {
-            return {
-                isBackupPresent: true,
-                data: backups,
-                message: "Backup found"
-            };
-        }
-    } catch (error: any) {
-        console.error(error);
-        throw new Error(error.message);
-    }
-}
-
 async function openLocalBackup(): Promise<{ success: boolean, message: string; }> {
     try {
         const chosenFileArray = dialog.showOpenDialogSync(mainWindow!, {
@@ -1310,10 +1262,11 @@ async function openLocalBackup(): Promise<{ success: boolean, message: string; }
             await fs.promises.copyFile(chosenFile, VAULT_COPY_PATH);
             const zip = new AdmZip(VAULT_COPY_PATH);
             return new Promise((resolve, reject) => {
-                zip.extractAllToAsync(USER_DATA_PATH, false, true, async (error) => {
+                zip.extractAllToAsync(USER_DATA_PATH, true, true, async (error) => {
                     await fs.promises.unlink(VAULT_COPY_PATH);
-                    resolve({ success: true, message: "Backup imported successfully!" });
+                    resolve({ success: true, message: "Backup Imported Successfully" });
                     if (error) {
+                        await handelError(error, 'Import Error', openLocalBackup.name, 'Import Failed. Try again!');
                         reject(error);
                     }
                 });
@@ -1330,31 +1283,7 @@ async function openLocalBackup(): Promise<{ success: boolean, message: string; }
     }
 }
 
-async function openCloudBackup(
-    _event: Electron.IpcMainInvokeEvent,
-    backupFileId: string,
-    backupFileName: string
-): Promise<{ success: boolean, message: string; }> {
-    try {
-        const auth = await getGoogleAuthClient();
-        const drive = googleDrive({ version: "v3", auth: auth as unknown as any });
-        const downloadLocation = await downloadBackupFile(drive, backupFileId, backupFileName);
-        const zip = new AdmZip(downloadLocation);
-        return new Promise((resolve, reject) => {
-            zip.extractAllToAsync(USER_DATA_PATH, true, false, async (error) => {
-                await fs.promises.unlink(downloadLocation);
-                resolve({ success: true, message: "Backup import successful!" });
-                if (error) {
-                    reject(error);
-                }
-            });
-        });
-    } catch (error) {
-        return await handelError(error, "Import", "@openCloudBackup", "Backup import failed!");
-    }
-}
-
-async function exportVault(): Promise<{ success: boolean, message: string; }> {
+async function exportVaultLocally(): Promise<{ success: boolean, message: string; }> {
     try {
         if (dbConnection) {
             dbConnection.closeSync();
@@ -1362,7 +1291,7 @@ async function exportVault(): Promise<{ success: boolean, message: string; }> {
         }
         const folderToExport = dialog.showSaveDialogSync(mainWindow!, {
             title: "Select the folder to export",
-            defaultPath: "vault.zip",
+            defaultPath: "z-vault.zip",
             filters: [
                 { name: "Vault Zip", extensions: ["zip"] }
             ]
@@ -1392,13 +1321,13 @@ async function exportVault(): Promise<{ success: boolean, message: string; }> {
             message: "Export successful!"
         };
     } catch (error: any) {
-        console.log({ error, where: "@exportVault" });
+        console.log({ error, where: "@exportVaultLocally" });
         throw new Error(error?.message);
     }
 }
 
 async function handelError(error: any, type: string, where: string, rendererMessage?: string): Promise<{ success: boolean, message: string; }> {
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorMessage = error instanceof Error ? error.message : String(error.message ?? error);
     const errorStack = error instanceof Error ? error.stack : 'No stack trace available';
     await logToFile(rendererMessage ?? errorMessage, where, errorStack);
     dialog.showErrorBox(`${type} Error Occurred`, rendererMessage ?? errorMessage);
@@ -1425,80 +1354,3 @@ process.on('uncaughtException', (err) => {
     }
     process.exit(1);
 });
-
-// function showPasswordPrompt(parentWindow: BrowserWindow | null, errorMessage: string = ""): Promise<string | null> {
-//     return new Promise((resolve) => {
-//         if (passwordWindow) {
-//             passwordWindow?.focus();
-//             if (errorMessage) {
-//                 passwordWindow?.webContents.send("cloudSyncPasswordError", errorMessage);
-//             }
-//             return;
-//         }
-//         passwordWindow = new BrowserWindow({
-//             parent: parentWindow!,
-//             modal: true,
-//             width: 550,
-//             height: errorMessage ? 380 : 540,
-//             resizable: false,
-//             minimizable: false,
-//             maximizable: false,
-//             title: 'Master Password Required',
-//             webPreferences: {
-//                 preload: path.join(__dirname, 'preload.js'),
-//                 nodeIntegration: false,
-//                 contextIsolation: true,
-//                 sandbox: true,
-//             },
-//             backgroundColor: '#1e1e1e',
-//             show: false,
-//         });
-//         if (app.isPackaged) {
-//             // In packaged app, files are next to the executable
-//             passwordWindow
-//                 .loadFile(path.join(process.resourcesPath, "renderer", "password-prompt.html"))
-//                 .catch((err) => {
-//                     console.log(err);
-//                 });
-//         } else {
-//             // In development, load from src folder
-//             const rendererPath = path.join(
-//                 __dirname,
-//                 "..",
-//                 "..",
-//                 "src",
-//                 "renderer",
-//                 "password-prompt.html",
-//             );
-//             passwordWindow.loadFile(rendererPath).catch((err) => {
-//                 console.log(err);
-//             });
-//         }
-//         passwordWindow.once('ready-to-show', () => {
-//             passwordWindow?.show();
-//             passwordWindow?.focus();
-//             if (errorMessage) {
-//                 passwordWindow?.webContents.send('cloudSyncPasswordError', errorMessage);
-//             }
-//         });
-//         const cleanup = () => {
-//             if (passwordWindow) {
-//                 passwordWindow.removeAllListeners();
-//                 passwordWindow.destroy();
-//                 passwordWindow = null;
-//             }
-//         };
-//         ipcMain.once('cloudSyncPasswordSubmit', (_event: IpcMainEvent, password: string) => {
-//             resolve(password.trim() || null);
-//             cleanup();
-//         });
-//         ipcMain.once('cloudSyncPasswordCancel', () => {
-//             resolve(null);
-//             cleanup();
-//         });
-//         passwordWindow.on('closed', () => {
-//             resolve(null);
-//             cleanup();
-//         });
-//     });
-// }

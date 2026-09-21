@@ -1,7 +1,7 @@
 import { Component, input, model, output, signal } from '@angular/core';
 import { ThemeService } from '../../services/theme.service';
 import { GlobalService } from '../../services/global.service';
-import { Categories, DataType, PasswordDetails } from '@zvault/shared-api';
+import { Categories, DataType, PasswordDetails, ResponsePayload, SortingOrder, TextDetails } from '@zvault/shared-api';
 
 @Component({
   selector: 'app-header',
@@ -12,8 +12,9 @@ import { Categories, DataType, PasswordDetails } from '@zvault/shared-api';
 export class Header {
   title = input<string>('Vault');
   addButtonText = input<string>('Add Password');
-  selectedDataType = input.required<DataType>();
+  
   vaultItemPasswords = model<PasswordDetails[]>();
+  vaultItemTexts = model<TextDetails[]>();
 
   toggleTheme = output<void>();
   addData = output<void>();
@@ -22,32 +23,41 @@ export class Header {
   categories = ['General', 'Work', 'Personal', 'Finance', 'Social', 'Entertainment'];
   timeoutId: any;
 
-  selectedCategory = signal<Categories>('');
-  searchInput = signal<string>('');
-
   constructor (
     private globalService: GlobalService,
     protected themeService: ThemeService
   ) { }
 
-  async handleDataSearch() {
-    const searchResponse = await window.electronAPI?.searchData(this.selectedCategory(), this.searchInput(), this.selectedDataType() ?? 'password', this.globalService.currentPageNum(), this.globalService.pageSize());
-    this.globalService.totalEntries.set(searchResponse?.totalEntries ?? 0);
-    this.vaultItemPasswords.set(searchResponse?.rows as PasswordDetails[]);
+  updateSearchResult(searchResponse: ResponsePayload) {
+    if(this.globalService.selectedDataType() === 'password') {
+      this.vaultItemPasswords.set(searchResponse.rows as PasswordDetails[]);
+    }
+    if(this.globalService.selectedDataType() === 'text') {
+      this.vaultItemTexts.set(searchResponse.rows as TextDetails[]);
+    }
   }
 
-  handlePasswordSearch(event: Event) {
+  handleDataSearch(event: Event) {
     const targetInput = (event.target) as HTMLInputElement;
-    this.searchInput.set(targetInput.value);
+    this.globalService.searchInput.set(targetInput.value);
     if (this.timeoutId) clearTimeout(this.timeoutId);
     this.timeoutId = setTimeout(async () => {
-      await this.handleDataSearch();
+      const searchResponse = await this.globalService.handleDataSearch();
+      if(searchResponse) this.updateSearchResult(searchResponse);
     }, 500);
   }
 
   async handleCategoryChange(event: Event) {
     const targetElement = (event.target) as HTMLSelectElement;
-    this.selectedCategory.set(targetElement.value as Categories);
-    await this.handleDataSearch();
+    this.globalService.selectedCategory.set(targetElement.value as Categories);
+    const searchResponse = await this.globalService.handleDataSearch();
+    if (searchResponse) this.updateSearchResult(searchResponse);
+  }
+
+  async handleDataSorting(event: Event) {
+    const targetElement = (event.target) as HTMLSelectElement;
+    this.globalService.selectedSortingOrder.set(targetElement.value as SortingOrder);
+    const searchResponse = await this.globalService.handleDataSearch();
+    if (searchResponse) this.updateSearchResult(searchResponse);
   }
 }

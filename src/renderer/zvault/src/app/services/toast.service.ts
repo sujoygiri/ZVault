@@ -12,7 +12,7 @@ export interface Toast {
   type: ToastType;
   title: string;
   message?: string;
-  duration?: number; // Duration in ms (0 = sticky/no progress bar)
+  duration?: number;
   action?: ToastAction;
 }
 
@@ -23,8 +23,6 @@ export interface ToastItemState {
   lastTickTime: number;
   animFrameId?: number;
 }
-
-
 
 @Injectable({
   providedIn: 'root',

@@ -33,7 +33,7 @@ export class Pagination {
   visiblePages = computed(() => {
     const total = this.totalPages();
     const current = this.currentPage();
-    const delta = 1; // Number of pages around current page
+    const delta = 3; // Number of pages around current page
     const pages: (number | string)[] = [];
 
     const rangeStart = Math.max(2, current - delta);

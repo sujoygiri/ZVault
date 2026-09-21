@@ -1,7 +1,10 @@
-import { Component, input, output } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { ToastService } from '../../services/toast.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { CloudRestore, RestoreMode } from '../modals/cloud-restore/cloud-restore';
+import { CloudDrive, GoogleDriveFile } from '@zvault/shared-api';
+import { GlobalService } from '../../services/global.service';
 
 export type SettingsTab = 'general' | 'security' | 'backup' | 'notifications';
 
@@ -20,7 +23,7 @@ export interface VaultSettings {
   // Backup & Sync
   autoBackupEnabled: boolean;
   autoBackupInterval: 'daily' | 'weekly' | 'monthly';
-  cloudProvider: 'none' | 'google' | 'microsoft';
+  cloudProvider: CloudDrive;
   cloudAccountEmail?: string;
   lastBackupTimestamp?: string;
 }
@@ -28,20 +31,23 @@ export interface VaultSettings {
 @Component({
   selector: 'app-settings',
   imports: [
-    CommonModule, 
-    FormsModule
-  ],
+    CommonModule,
+    FormsModule,
+    CloudRestore
+],
   templateUrl: './settings.html',
   styleUrl: './settings.css',
 })
 export class Settings {
 
   activeTab: SettingsTab = 'general';
-
   addSetting = output<void>();
+  showRestoreModal = signal(false);
+  availableBackups = signal<GoogleDriveFile[]>([]); // Optional custom backups list
+
 
   // Vault Settings Model State
-  settings: VaultSettings = {
+  settings = signal<VaultSettings>({
     vaultName: 'Personal Master Vault',
     theme: 'dark',
     clipboardClearDelay: 30,
@@ -51,10 +57,14 @@ export class Settings {
     clearClipboardOnLock: true,
     autoBackupEnabled: false,
     autoBackupInterval: 'weekly',
-    cloudProvider: 'none'
-  };
+    cloudProvider: 'none',
+    cloudAccountEmail: 'none'
+  });
 
-  constructor (private toastService: ToastService) {}
+  constructor (
+    private globalService: GlobalService,
+    private toastService: ToastService
+  ) { }
 
   saveSettings(): void {
     // Persist settings logic here (e.g., call Vault Config API / LocalStorage)
@@ -65,7 +75,7 @@ export class Settings {
   }
 
   resetDefaults(): void {
-    this.settings = {
+    this.settings.set({
       vaultName: 'Personal Master Vault',
       theme: 'dark',
       clipboardClearDelay: 30,
@@ -75,62 +85,73 @@ export class Settings {
       clearClipboardOnLock: true,
       autoBackupEnabled: false,
       autoBackupInterval: 'weekly',
-      cloudProvider: 'none'
-    };
+      cloudProvider: 'none',
+      cloudAccountEmail: 'none'
+    });
 
     this.toastService.info('Settings Reset', 'Restored default vault configuration.');
   }
 
   // --- LOCAL BACKUP ACTIONS ---
-  exportLocalBackup(): void {
-    const backupData = JSON.stringify({
-      timestamp: new Date().toISOString(),
-      vault: this.settings.vaultName,
-      data: 'ENCRYPTED_PAYLOAD_HERE'
-    });
-
-    const blob = new Blob([backupData], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `vault-backup-${Date.now()}.vaultbak`;
-    a.click();
-    URL.revokeObjectURL(url);
-
-    this.toastService.success('Backup Exported', 'Local encrypted backup saved to downloads.');
-  }
-
-  importLocalBackup(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      const file = input.files[0];
-      const reader = new FileReader();
-
-      reader.onload = () => {
-        // Parse & decrypt backup payload
-        this.toastService.success('Backup Restored', `Successfully loaded "${file.name}".`);
-      };
-
-      reader.readAsText(file);
+  async exportLocalBackup()  {
+    const exportVaultResponse = await window.electronAPI?.exportVaultLocally()
+    if(exportVaultResponse?.success) {
+      this.toastService.success('Backup Exported', exportVaultResponse.message);
+    } else {
+      this.toastService.error('Export Failed', exportVaultResponse?.message);
     }
   }
 
-  // --- CLOUD SYNC ACTIONS ---
-  connectCloud(provider: 'google' | 'microsoft'): void {
-    // Initiate OAuth flow
-    this.settings.cloudProvider = provider;
-    this.settings.cloudAccountEmail = provider === 'google' ? 'user@gmail.com' : 'user@outlook.com';
+  importLocalBackup() {
+    this.globalService.importType.set('local');
+    this.showRestoreModal.set(true);
+  }
 
-    this.toastService.success(
-      'Cloud Connected',
-      `Vault synchronized with ${provider === 'google' ? 'Google Drive' : 'Microsoft OneDrive'}.`
-    );
+  // --- CLOUD SYNC ACTIONS ---
+  async connectCloud(provider: CloudDrive) {
+    // Initiate OAuth flow
+    this.globalService.importType.set('cloud');
+    const backupResponse = await window.electronAPI?.connectToCloud(provider);
+    console.log(backupResponse);
+    if (backupResponse?.isBackupPresent && backupResponse.data) {
+      this.showRestoreModal.set(true);
+      this.availableBackups.set(backupResponse.data);
+      // this.settings.update((prev) => ({
+      //   ...prev,
+      //   cloudProvider: provider,
+      //   cloudAccountEmail: provider === 'google' ? 'user@gmail.com' : 'user@outlook.com'
+      // }));
+      // this.toastService.success(
+      //   'Cloud Connected',
+      //   `Vault synchronized with ${provider === 'google' ? 'Google Drive' : 'Microsoft OneDrive'}.`
+      // );
+    }
   }
 
   disconnectCloud(): void {
-    this.settings.cloudProvider = 'none';
-    this.settings.cloudAccountEmail = undefined;
+    this.settings().cloudProvider = 'none';
+    this.settings().cloudAccountEmail = 'none';
 
     this.toastService.warning('Cloud Disconnected', 'Cloud synchronization has been disabled.');
+  }
+
+  
+  onModalDismiss() {
+    this.showRestoreModal.set(false);
+  }
+
+  async onExecuteRestore(event: { backupId: string | null; backupName: string | null; mode: RestoreMode; password?: string }) {
+    console.log(`Executing ${event.mode} with backup ID: ${event.backupId}`);
+    this.showRestoreModal.set(false);
+
+    if (event.mode === 'replace') {
+      // Trigger DuckDB overwrite logic via IPC
+      // await window.electronAPI.replaceDatabase(event.backupId);
+    } else {
+      // Trigger DuckDB merge logic via IPC
+      console.log(event.backupId, event.backupName);
+      // const response = await window.electronAPI?.mergeGoogleCloudBackupFile(event.backupId, event.backupName, event.password);
+      // console.log({response});
+    }
   }
 }

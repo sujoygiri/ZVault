@@ -1,21 +1,8 @@
 import { Component, effect, input, OnInit, output, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { DataType, NewPassword, NewText, PasswordDetails, TextDetails, TotalPasswordData } from '@zvault/shared-api';
+import { DataType, PasswordDetails, TextDetails } from '@zvault/shared-api';
+import { GlobalService } from '../../../services/global.service';
 
-export interface PasswordPayload {
-  title: string;
-  usernameOrEmail: string;
-  password: string;
-  category: string;
-  url: string;
-  note: string;
-}
-
-export interface TextPayload {
-  title: string;
-  content: string;
-  category: string;
-}
 
 @Component({
   selector: 'app-add-data',
@@ -27,16 +14,14 @@ export class AddData implements OnInit {
 
   // Inputs / Outputs
   isOpen = input<boolean>(false);
-  passwordDataToBeEdited = input<TotalPasswordData | null>(null);
+  passwordDataToBeEdited = input<PasswordDetails | null>(null);
   textDataToBeEdited = input<TextDetails>();
-  selectedDataType = input<DataType>();
   dataEntryMode = input<'add'| 'edit'>();
   close = output<void>();
-  savePassword = output<NewPassword>();
-  saveText = output<TextPayload | TextDetails>();
+  savePassword = output<PasswordDetails>();
+  saveText = output<TextDetails>();
 
   // Active Tab State
-  activeTab = signal<DataType>('password');
   isTransitioning = signal<boolean>(false);
   isClosing = signal<boolean>(false);
 
@@ -53,12 +38,15 @@ export class AddData implements OnInit {
   passwordForm!: FormGroup;
   textForm!: FormGroup;
 
-  constructor (private formBuilder: FormBuilder) { 
+  constructor (private formBuilder: FormBuilder, protected globalService: GlobalService) { 
     effect(() => {
       const passwordToEdit = this.passwordDataToBeEdited();
-      this.activeTab.set(this.selectedDataType() ?? 'password');
+      const textDataToEdit = this.textDataToBeEdited();
       if (passwordToEdit) {
         this.passwordForm.patchValue(passwordToEdit);
+      }
+      if(textDataToEdit) {
+        this.textForm.patchValue(textDataToEdit);
       }
     });
   }
@@ -80,15 +68,6 @@ export class AddData implements OnInit {
     });
   }
 
-  setTab(newTab: DataType): void {
-    if (this.activeTab() === newTab || this.isTransitioning()) return;
-    this.isTransitioning.set(true);
-    setTimeout(() => {
-      this.activeTab.set(newTab);
-      this.isTransitioning.set(false);
-    }, 120);
-  }
-
   // Password Generator
   generatePassword(): void {
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -106,7 +85,6 @@ export class AddData implements OnInit {
     for (let i = 0; i < this.passLength(); i++) {
       generated += validChars[array[i] % validChars.length];
     }
-
     this.passwordForm.patchValue({ password: generated });
   }
 
@@ -127,11 +105,7 @@ export class AddData implements OnInit {
 
   onClose(): void {
     if (this.isClosing()) return;
-
-    // Trigger exit animation class
     this.isClosing.set(true);
-
-    // Wait for the exit transition (200ms) before emitting close
     setTimeout(() => {
       this.resetAndClose();
       this.close.emit();

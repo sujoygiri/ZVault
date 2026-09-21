@@ -10,29 +10,30 @@
 
     <!-- VIEW CONTENT -->
     <div class="flex-1 min-h-0 overflow-hidden">
-      @if (selectedMenuItem() === 'passwords') {
+      @if (globalService.selectedMenuItem() === 'passwords') {
       <app-password-view [(vaultItemPasswords)]="vaultItemPasswords"
-        (toggleTheme)="toggleTheme()"
         (addPassword)="isAddEditDataModalOpen.set(true); dataEntryMode.set('add')"
-        (sortChange)="handleSortChange($event)"
         (openNoteView)="openNoteViewModal($event.title, $event.content)"
         (editPassword)="handlePasswordDataEdit($event.item, $event.type)"
         (deletePassword)="openDeleteConfirmationModal($event.id, $event.title, $event.type)"
         >
       </app-password-view>
       } 
-      @if (selectedMenuItem() === 'texts') {
-
+      @if (globalService.selectedMenuItem() === 'texts') {
+        <app-text-view [(vaultItemTexts)]="vaultItemTexts"
+        (addText)="isAddEditDataModalOpen.set(true); dataEntryMode.set('add')"
+        (openContentViewModal)="openNoteViewModal($event.title, $event.content)"
+        (editText)="handleTextDataEdit($event.item, $event.type)"
+        (deleteText)="openDeleteConfirmationModal($event.id, $event.title, $event.type)"
+        ></app-text-view>
       } 
-      @if (selectedMenuItem() === 'settings') {
-      <app-settings (toggleTheme)="toggleTheme()"
-        (addSetting)="handleSettingsAdd()">
-      </app-settings>
+      @if (globalService.selectedMenuItem() === 'settings') {
+      <app-settings></app-settings>
       }
     </div>
 
     <!-- GLOBAL PAGINATION FOOTER -->
-    @if (selectedMenuItem() !== 'settings') {
+    @if (globalService.selectedMenuItem() !== 'settings') {
     <div
       class="shrink-0 px-10 py-3 bg-transparent border-t border-slate-200/50 dark:border-slate-800/50">
       <app-pagination [totalEntries]="globalService.totalEntries()"
@@ -49,16 +50,15 @@
   <app-add-data [isOpen]="isAddEditDataModalOpen()"
     [passwordDataToBeEdited]="passwordDataToBeEdited()"
     [textDataToBeEdited]="textDataToBeEdited()"
-    [selectedDataType]="selectedDataType()"
     [dataEntryMode]="dataEntryMode()"
     (close)="isAddEditDataModalOpen.set(false)"
     (savePassword)="handleSavePassword($event)"
     (saveText)="handleSaveText($event)">
   </app-add-data>
 
-  <app-text-view [isOpen]="isTextViewModalOpen()" [title]="textTitle()"
+  <app-view-note [isOpen]="isTextViewModalOpen()" [title]="textTitle()"
     [content]="textContent()" (close)="isTextViewModalOpen.set(false)">
-  </app-text-view>
+  </app-view-note>
 
   <app-delete-confirmation [isOpen]="isDeleteConfirmationModalOpen()"
     [itemName]="deleteTargetName()" [itemId]="deleteTargetId()"

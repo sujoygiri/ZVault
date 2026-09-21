@@ -55,8 +55,7 @@ export class Auth implements OnInit {
     const { masterPassword } = this.unlockVaultForm.value;
     const vaultUnlockResponse = await window.electronAPI?.unlockVault(masterPassword);
     if (vaultUnlockResponse?.success) {
-      const vaultData = await this.globalService.getVaultData("password");
-      this.globalService.totalEntries.set(vaultData?.totalEntries ?? 0);
+      const vaultData = await this.globalService.getVaultData();
       this.vaultDataEmitter.emit(vaultData);
     }
   }
@@ -65,8 +64,7 @@ export class Auth implements OnInit {
     const { masterPassword } = this.createVaultForm.value;
     const vaultCreateResponse = await window.electronAPI?.createNewVault(masterPassword);
     if (vaultCreateResponse?.success) {
-      const vaultData = await this.globalService.getVaultData("password");
-      this.globalService.totalEntries.set(vaultData?.totalEntries ?? 0);
+      const vaultData = await this.globalService.getVaultData();
       this.vaultDataEmitter.emit(vaultData);
     }
   }

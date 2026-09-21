@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, input, output, signal } from '@angular/core';
+import { MenuItem } from '../../services/global.service';
 
-export type MenuItem = 'passwords' | 'texts' | 'settings' | 'logout';
+
 
 @Component({
   selector: 'app-sidebar',

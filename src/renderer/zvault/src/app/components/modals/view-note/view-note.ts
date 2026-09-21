@@ -1,12 +1,12 @@
 import { Component, input, output } from '@angular/core';
 
 @Component({
-  selector: 'app-text-view',
+  selector: 'app-view-note',
   imports: [],
-  templateUrl: './text-view.html',
-  styleUrl: './text-view.css'
+  templateUrl: './view-note.html',
+  styleUrl: './view-note.css'
 })
-export class TextView {
+export class ViewNote {
   isOpen = input<boolean>(false);
   title = input<string>('Information');
   content = input<string>('');
