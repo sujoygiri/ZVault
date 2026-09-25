@@ -3,9 +3,11 @@ import {
     BrowserWindow,
     ipcMain,
     IpcMainInvokeEvent,
+    IpcMainEvent,
     shell,
     dialog,
-    safeStorage
+    safeStorage,
+    net
 } from "electron";
 import path from "node:path";
 import os from "node:os";
@@ -23,7 +25,7 @@ import {
 import argon2 from "@node-rs/argon2";
 import { drive_v3, google } from "googleapis";
 import AdmZip from "adm-zip";
-import { Categories, CloudDrive, DataTables, DataType, NewPassword, NewText, PasswordDetails, SortingOrder, TextDetails } from "../shared/api.types";
+import { Categories, CloudDrive, DataTables, DataType, NewPassword, NewText, PasswordDetails, SortingOrder, TextDetails, ApiResponse } from "../shared/api.types";
 
 const rawCredentials: any = fs.readFileSync(path.join(__dirname, "../../credential.env"), "utf8");
 const credential: { APP_TOKEN: string; } = JSON.parse(rawCredentials);
@@ -33,6 +35,7 @@ const TOKEN_PATH = path.join(USER_DATA_PATH, 'drive-token.enc');
 const VAULT_PATH = path.join(USER_DATA_PATH, 'vault.db');
 const TEMP_VAULT_PATH = path.join(app.getPath("temp"), 'zvault-cloud-latest.db');
 const VAULT_DATA_PATH = path.join(USER_DATA_PATH, "vault.data");
+const USER_SETTINGS_DATA_PATH = path.join(USER_DATA_PATH, 'user_settings.json');
 const BACKUP_FOLDER_NAME = 'ZVault Backups';
 const prefixes = [
     "Aero", "Alpha", "Amber", "Aqua", "Arch", "Astral", "Auto", "Azure", "Bio", "Black",
@@ -97,6 +100,9 @@ function createWindow() {
         return { action: "deny" };
     });
 
+    // mainWindow.webContents.closeDevTools();
+    // mainWindow.removeMenu();
+
     if (app.isPackaged) {
         // In packaged app, files are next to the executable
         mainWindow
@@ -112,7 +118,7 @@ function createWindow() {
         });
 
         // Optional: Auto-open dev tools in dev mode
-        // win.webContents.openDevTools({ mode: 'detach' });
+        // mainWindow.webContents.openDevTools({ mode: 'detach' });
     }
 }
 
@@ -128,6 +134,8 @@ app.whenReady().then(() => {
     ipcMain.handle("searchData", searchData);
     ipcMain.handle("connectToCloud", connectToCloud);
     ipcMain.handle("mergeGoogleCloudBackupFile", mergeGoogleCloudBackupFile);
+    ipcMain.handle("getUserSettingsData", getUserSettingsData);
+    ipcMain.handle("setUserSettingsData", setUserSettingsData);
     // ipcMain.handle("importCloudBackup", importGDriveData);
     // ipcMain.handle("checkExistingBackup", connectToGoogleDrive);
     // ipcMain.handle("checkTokenValidity", checkTokenValidity);
@@ -135,6 +143,7 @@ app.whenReady().then(() => {
     ipcMain.handle("exportVaultLocally", exportVaultLocally);
     // ipcMain.handle("backupToDrive", backupToDrive);
     // ipcMain.handle("openCloudBackup", openCloudBackup);
+    ipcMain.on("openUrl", openUrl);
 }).then(() => {
     createWindow();
 });
@@ -152,6 +161,14 @@ function vaultExistStatus(): boolean {
     return fs.existsSync(VAULT_PATH) && fs.existsSync(VAULT_DATA_PATH);
 }
 
+async function openUrl(_event: IpcMainEvent, url: string): Promise<ApiResponse> {
+    try {
+        await shell.openExternal(url);
+        return {success: true};
+    } catch (error) {
+        return await handelError(error, 'Open URL', openUrl.name, `Failed to open the URL: ${url}`);
+    }
+}
 
 async function initializeDbConnection(dbEncryptionKey: string) {
     try {
@@ -319,6 +336,28 @@ async function getTableData(
 async function getAppData() {
     const storedAppData = await fs.promises.readFile(VAULT_DATA_PATH, { encoding: "utf8" });
     return JSON.parse(storedAppData);
+}
+
+async function getUserSettingsData(_event: IpcMainInvokeEvent): Promise<ApiResponse> {
+    try {
+        if(fs.existsSync(USER_SETTINGS_DATA_PATH)){
+            const userSettingsData = await fs.promises.readFile(USER_SETTINGS_DATA_PATH, {encoding: 'utf8'});
+            const parsedData = JSON.parse(userSettingsData);
+            return {success: true, data: parsedData};
+        }
+        return {success: false, data: null};
+    } catch (error) {
+        return await handelError(error, 'User Settings', getUserSettingsData.name, 'Settings Data Corrupted. Rest to Defaults!');
+    }
+}
+
+async function setUserSettingsData(_event: IpcMainInvokeEvent, settingsData: string): Promise<ApiResponse> {
+    try {
+        await fs.promises.writeFile(USER_SETTINGS_DATA_PATH, settingsData, {encoding: 'utf8'});
+        return {success: true, message: "Settings saved successfully!"};
+    } catch (error) {
+        return await handelError(error, 'Setting Store', setUserSettingsData.name, 'Failed to save settings!');
+    }
 }
 
 async function createNewVault(_event: IpcMainInvokeEvent, password: string) {
@@ -620,8 +659,6 @@ function getSortingColumnAndOrder(sortingValue: SortingOrder) {
             columnName = 'title';
             break;
     }
-    console.log({ columnName, order });
-
     return {
         columnName,
         order: order.toUpperCase()
@@ -738,15 +775,16 @@ async function getNewToken(): Promise<{ success: boolean, accessToken: string | 
     const verifier = crypto.randomBytes(32).toString('base64url');
     const challenge = crypto.createHash('sha256').update(verifier).digest('base64url');
 
-    const res = await fetch(`${SERVER_URL}/auth/google/url?code_challenge=${challenge}`, {
-        headers: { 'x-zvault-app-token': credential.APP_TOKEN }
+    const res = await net.fetch(`${SERVER_URL}/auth/google/url?code_challenge=${challenge}`, {
+        headers: { 'x-zvault-app-token': credential.APP_TOKEN },
+        credentials: 'include'
     });
-
+    
     // Ensure the initial fetch didn't fail
     if (!res.ok) throw new Error(`Init failed: ${res.status} ${await res.text()}`);
 
     const { url, sessionId } = await res.json();
-
+    
     await shell.openExternal(url);
     const pollStartTime = Date.now();
 
@@ -757,10 +795,11 @@ async function getNewToken(): Promise<{ success: boolean, accessToken: string | 
                 return reject(new Error('Login timed out.'));
             }
             try {
-                const exchangeRes = await fetch(`${SERVER_URL}/auth/google/exchange`, {
+                const exchangeRes = await net.fetch(`${SERVER_URL}/auth/google/exchange`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'x-zvault-app-token': credential.APP_TOKEN },
-                    body: JSON.stringify({ sessionId, codeVerifier: verifier })
+                    body: JSON.stringify({ sessionId, codeVerifier: verifier }),
+                    credentials: 'include'
                 });
 
                 // Catch non-200 HTTP responses before attempting to parse JSON
@@ -794,10 +833,11 @@ async function getLocalTokenOrRefreshedToken(): Promise<{ exist: boolean, access
     // Return existing token if valid for >5 more minutes
     if (Date.now() < (tokens.expiry_date - 300000)) return { exist: true, accessToken: tokens.access_token };
 
-    const res = await fetch(`${SERVER_URL}/auth/google/refresh`, {
+    const res = await net.fetch(`${SERVER_URL}/auth/google/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-zvault-app-token': credential.APP_TOKEN },
-        body: JSON.stringify({ refreshToken: tokens.refresh_token })
+        body: JSON.stringify({ refreshToken: tokens.refresh_token }),
+        credentials: 'include'
     });
 
     if (res.status === 401) {
@@ -833,7 +873,6 @@ async function checkExistingBackup(accessToken: string): Promise<{ isBackupPrese
     }
 }
 
-
 async function storeAuthToken(token: string) {
     try {
         if (safeStorage.isEncryptionAvailable()) {
@@ -852,7 +891,6 @@ async function storeAuthToken(token: string) {
         await handelError(error, 'Token Encryption', storeAuthToken.name, 'Something went wrong');
     }
 }
-
 
 async function getAuthToken() {
     if (!fs.existsSync(TOKEN_PATH)) return null;
@@ -930,7 +968,6 @@ async function mergeGoogleCloudBackupFile(_event: IpcMainInvokeEvent, backFileId
         
     }
 }
-
 
 async function downloadBackupFile(drive: drive_v3.Drive, fileId: string, fileName: string): Promise<string> {
     try {
@@ -1326,7 +1363,12 @@ async function exportVaultLocally(): Promise<{ success: boolean, message: string
     }
 }
 
-async function handelError(error: any, type: string, where: string, rendererMessage?: string): Promise<{ success: boolean, message: string; }> {
+async function handelError(
+    error: any,
+    type: string,
+    where: string,
+    rendererMessage?: string
+): Promise<{ success: boolean, message: string; }> {
     const errorMessage = error instanceof Error ? error.message : String(error.message ?? error);
     const errorStack = error instanceof Error ? error.stack : 'No stack trace available';
     await logToFile(rendererMessage ?? errorMessage, where, errorStack);

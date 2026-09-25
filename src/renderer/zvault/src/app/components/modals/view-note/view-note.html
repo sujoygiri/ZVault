@@ -36,7 +36,7 @@
         <!-- Content Body -->
         <div class="mt-4 max-h-[60vh] overflow-y-auto pr-1 scrollbar-thin [scrollbar-color:transparent_transparent] hover:[scrollbar-color:var(--color-slate-300)_transparent] dark:hover:[scrollbar-color:var(--color-slate-700)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-slate-300 dark:hover:[&::-webkit-scrollbar-thumb]:bg-slate-700 [&::-webkit-scrollbar-thumb]:rounded-full">
             <p
-                class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-slate-950/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800/60">
+                class="text-xs wrap-break-word text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-slate-950/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800/60">
                 {{ content() || 'No content provided.' }}
             </p>
         </div>

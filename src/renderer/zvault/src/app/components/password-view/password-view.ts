@@ -61,4 +61,8 @@ export class PasswordView {
     //   stateDirective.reset();
     // })
   }
+
+  async handleUrlOpen(url: string) {
+    window.electronAPI?.openUrl(url);
+  }
 }

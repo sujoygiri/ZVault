@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from "electron/renderer";
-import {Categories, CloudDrive, DataType, NewPassword, NewText, PasswordDetails, ResponsePayload, SortingOrder, TextDetails} from "../shared/api.types"
+import { Categories, CloudDrive, DataType, NewPassword, NewText, PasswordDetails, ResponsePayload, SortingOrder, TextDetails } from "../shared/api.types";
 
 contextBridge.exposeInMainWorld("electronAPI", {
   version: () => process.versions.node,
@@ -12,10 +12,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
   decryptSensitiveData: (id: string, type: DataType) => ipcRenderer.invoke("decryptSensitiveData", id, type),
   fetchData: (type: DataType, pageNum: number, pageSize: number) => ipcRenderer.invoke("fetchData", type, pageNum, pageSize),
   searchData: (category: Categories, searchInput: string, type: DataType, pageNum: number, pageSize: number, sortingOrder: SortingOrder): Promise<ResponsePayload> => ipcRenderer.invoke("searchData", category, searchInput, type, pageNum, pageSize, sortingOrder),
+  getUserSettingsData: (): Promise<{ success: boolean; data: any; }> => ipcRenderer.invoke("getUserSettingsData"),
+  setUserSettingsData: (settingsData: string): Promise<{ success: boolean; message: string;}> => ipcRenderer.invoke("setUserSettingsData", settingsData),
   connectToCloud: (cloudDrive: CloudDrive) => ipcRenderer.invoke("connectToCloud", cloudDrive),
   mergeGoogleCloudBackupFile: (backFileId: string, backFilename: string, masterPassword: string) => ipcRenderer.invoke("mergeGoogleCloudBackupFile", backFileId, backFilename, masterPassword),
   exportVaultLocally: () => ipcRenderer.invoke("exportVaultLocally"),
-  
+  openUrl: (url: string) => ipcRenderer.send("openUrl", url),
+
 
   cloudSyncPasswordError: (callback: (errMessage: string) => void) => ipcRenderer.on("cloudSyncPasswordError", (_event: IpcRendererEvent, errorMsg: string) => callback(errorMsg)),
   cloudSyncPasswordSubmit: (password: string) => ipcRenderer.send("cloudSyncPasswordSubmit", password),
@@ -25,5 +28,5 @@ contextBridge.exposeInMainWorld("electronAPI", {
   checkTokenValidity: () => ipcRenderer.invoke("checkTokenValidity"),
   openLocalBackup: () => ipcRenderer.invoke("openLocalBackup"),
   backupToDrive: () => ipcRenderer.invoke("backupToDrive"),
-  openCloudBackup: (backupFileId: string, backupFileName: string): Promise<{ success: boolean, message: string }> => ipcRenderer.invoke("openCloudBackup", backupFileId, backupFileName),
+  openCloudBackup: (backupFileId: string, backupFileName: string): Promise<{ success: boolean, message: string; }> => ipcRenderer.invoke("openCloudBackup", backupFileId, backupFileName),
 });

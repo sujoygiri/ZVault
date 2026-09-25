@@ -121,7 +121,9 @@
                             class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                             Vault Name
                         </label>
-                        <input type="text" [(ngModel)]="settings().vaultName"
+                        <input type="text"
+                            (input)="handleSettingsUpdate('vaultName', settings().vaultName)"
+                            [(ngModel)]="settings().vaultName"
                             class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500 transition" />
                     </div>
 
@@ -132,10 +134,10 @@
                         </label>
                         <div class="grid grid-cols-3 gap-4">
                             <button type="button"
-                                (click)="settings().theme = 'light'"
+                                (click)="settings().theme = 'light'; handleThemeChange()"
                                 [class.border-blue-500]="settings().theme === 'light'"
                                 [class.bg-blue-50/50]="settings().theme === 'light'"
-                                [class.dark:bg-blue-950/30]="settings().theme === 'light'"
+                                [class.dark:bg-blue-900]="settings().theme === 'light'"
                                 class="flex items-center justify-center cursor-pointer gap-2 border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:border-slate-300 dark:hover:border-slate-700">
                                 ☀️ Light
                             </button>
@@ -144,7 +146,7 @@
                                 (click)="settings().theme = 'dark'"
                                 [class.border-blue-500]="settings().theme === 'dark'"
                                 [class.bg-blue-50/50]="settings().theme === 'dark'"
-                                [class.dark:bg-blue-950/30]="settings().theme === 'dark'"
+                                [class.dark:bg-blue-900]="settings().theme === 'dark'"
                                 class="flex items-center justify-center cursor-pointer gap-2 border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:border-slate-300 dark:hover:border-slate-700">
                                 🌙 Dark
                             </button>
@@ -153,7 +155,7 @@
                                 (click)="settings().theme = 'system'"
                                 [class.border-blue-500]="settings().theme === 'system'"
                                 [class.bg-blue-50/50]="settings().theme === 'system'"
-                                [class.dark:bg-blue-950/30]="settings().theme === 'system'"
+                                [class.dark:bg-blue-900]="settings().theme === 'system'"
                                 class="flex items-center justify-center cursor-pointer gap-2 border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:border-slate-300 dark:hover:border-slate-700">
                                 💻 System
                             </button>
@@ -179,6 +181,7 @@
                             </span>
                         </div>
                         <input type="range" min="5" max="120" step="5"
+                            (change)="handleSettingsUpdate('clipboardClearDelay', settings().clipboardClearDelay)"
                             [(ngModel)]="settings().clipboardClearDelay"
                             class="w-full accent-blue-600 mt-3 cursor-pointer h-2 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none" />
                     </div>
@@ -196,6 +199,7 @@
                             </p>
                         </div>
                         <input type="checkbox"
+                            (change)="handleSettingsUpdate('maskSensitiveData', settings().maskSensitiveData)"
                             [(ngModel)]="settings().maskSensitiveData"
                             class="w-5 h-5 text-blue-600 border-slate-300 dark:border-slate-700 rounded focus:ring-0 cursor-pointer" />
                     </div>
@@ -222,7 +226,9 @@
                             class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                             Inactivity Auto-Lock
                         </label>
-                        <select [(ngModel)]="settings().autoLockDelay"
+                        <select
+                            (change)="handleSettingsUpdate('autoLockDelay', settings().autoLockDelay)"
+                            [(ngModel)]="settings().autoLockDelay"
                             class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500 cursor-pointer">
                             <option [ngValue]="0">Immediately</option>
                             <option [ngValue]="1">After 1 minute</option>
@@ -245,6 +251,7 @@
                             </p>
                         </div>
                         <input type="checkbox"
+                            (change)="handleSettingsUpdate('lockOnSystemSleep', settings().lockOnSystemSleep)"
                             [(ngModel)]="settings().lockOnSystemSleep"
                             class="w-5 h-5 text-blue-600 border-slate-300 dark:border-slate-700 rounded focus:ring-0 cursor-pointer" />
                     </div>
@@ -262,6 +269,7 @@
                             </p>
                         </div>
                         <input type="checkbox"
+                            (change)="handleSettingsUpdate('clearClipboardOnLock',settings().clearClipboardOnLock)"
                             [(ngModel)]="settings().clearClipboardOnLock"
                             class="w-5 h-5 text-blue-600 border-slate-300 dark:border-slate-700 rounded focus:ring-0 cursor-pointer" />
                     </div>
@@ -294,7 +302,8 @@
                                 </h4>
                                 <p
                                     class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                    Save the vault&apos;s snapshot to a file or restore vault from
+                                    Save the vault&apos;s snapshot to a file or
+                                    restore vault from
                                     a file.
                                 </p>
                             </div>
@@ -432,7 +441,7 @@
         </div>
     </div>
     @if (showRestoreModal()) {
-    <app-cloud-restore [backups]="availableBackups()"
-        (skip)="onModalDismiss()" (restore)="onExecuteRestore($event)" />
+    <app-cloud-restore [backups]="availableBackups()" (skip)="onModalDismiss()"
+        (restore)="onExecuteRestore($event)" />
     }
 </div>

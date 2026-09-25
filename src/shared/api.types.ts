@@ -6,10 +6,6 @@ export type Categories = 'General' | 'Work' | 'Personal' | 'Finance' | 'Social' 
 export type ModalName = "backup_action" | "backup_list" | null;
 export type SortingOrder = "name_asc" | "name_desc" | "date_asc" | "date_desc";
 
-export interface ModalProp {
-    onSetModalState: (isOpen: boolean, modalName: ModalName) => void;
-}
-
 // main process types
 export type DataType = "password" | "text";
 export type DataTables = "accounts" | "texts";
@@ -26,9 +22,12 @@ export interface IElectronAPI {
     decryptSensitiveData: (id: string, type: DataType) => Promise<string>,
     fetchData: (type: DataType, pageNum: number, pageSize: number) => Promise<ResponsePayload>,
     searchData: (category: Categories, searchInput: string, type: DataType, pageNum: number, pageSize: number, sortingOrder: SortingOrder) => Promise<ResponsePayload>,
+    getUserSettingsData: () => Promise<{ success: boolean;data: any;}>,
+    setUserSettingsData: (settingsData: string) => Promise<{success: boolean;message: string;}>,
     connectToCloud: (cloudDrive: CloudDrive) => Promise<{ isBackupPresent: boolean; data: drive_v3.Schema$File[] | null; message: string; } | undefined>,
     mergeGoogleCloudBackupFile: (backFileId: string, backFilename: string, masterPassword: string) => Promise<any>,
     exportVaultLocally: () => Promise<{ success: boolean, message: string; }>,
+    openUrl: (url: string) => void,
 
 
     cloudSyncPasswordError: (callback: (errMessage: string) => void) => Electron.IpcRenderer,
@@ -46,6 +45,12 @@ declare global {
     interface Window {
         electronAPI?: IElectronAPI;
     }
+}
+
+export interface ApiResponse {
+    success: boolean;
+    message?: string;
+    data?: any | null;
 }
 
 export interface ResponsePayload {

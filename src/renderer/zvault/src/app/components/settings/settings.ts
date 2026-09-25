@@ -1,10 +1,11 @@
-import { Component, input, output, signal } from '@angular/core';
+import { Component, computed, effect, input, OnInit, output, signal } from '@angular/core';
 import { ToastService } from '../../services/toast.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CloudRestore, RestoreMode } from '../modals/cloud-restore/cloud-restore';
 import { CloudDrive, GoogleDriveFile } from '@zvault/shared-api';
 import { GlobalService } from '../../services/global.service';
+import { ThemeService } from '../../services/theme.service';
 
 export type SettingsTab = 'general' | 'security' | 'backup' | 'notifications';
 
@@ -34,20 +35,19 @@ export interface VaultSettings {
     CommonModule,
     FormsModule,
     CloudRestore
-],
+  ],
   templateUrl: './settings.html',
   styleUrl: './settings.css',
 })
-export class Settings {
+export class Settings implements OnInit {
 
   activeTab: SettingsTab = 'general';
   addSetting = output<void>();
   showRestoreModal = signal(false);
   availableBackups = signal<GoogleDriveFile[]>([]); // Optional custom backups list
 
-
   // Vault Settings Model State
-  settings = signal<VaultSettings>({
+  defaultSettingsValue: VaultSettings = {
     vaultName: 'Personal Master Vault',
     theme: 'dark',
     clipboardClearDelay: 30,
@@ -59,43 +59,55 @@ export class Settings {
     autoBackupInterval: 'weekly',
     cloudProvider: 'none',
     cloudAccountEmail: 'none'
-  });
+  };
+
+  settings = signal<VaultSettings>(this.defaultSettingsValue);
 
   constructor (
     private globalService: GlobalService,
-    private toastService: ToastService
-  ) { }
-
-  saveSettings(): void {
-    // Persist settings logic here (e.g., call Vault Config API / LocalStorage)
-    this.toastService.success(
-      'Settings Saved',
-      'Your vault preferences have been updated successfully.'
-    );
+    private toastService: ToastService,
+    private themeService: ThemeService
+  ) {
+    effect(async () => {
+      console.log(this.settings());
+    });
+  }
+  
+  ngOnInit(): void {
+    console.log('Hi');
+    this.loadStoredSettings();
+  }
+  
+  async loadStoredSettings() {
+    const storedSettings = await window.electronAPI?.getUserSettingsData();
+    if (storedSettings?.success) {
+      this.settings.set(storedSettings.data);
+    }
   }
 
-  resetDefaults(): void {
-    this.settings.set({
-      vaultName: 'Personal Master Vault',
-      theme: 'dark',
-      clipboardClearDelay: 30,
-      maskSensitiveData: true,
-      autoLockDelay: 5,
-      lockOnSystemSleep: true,
-      clearClipboardOnLock: true,
-      autoBackupEnabled: false,
-      autoBackupInterval: 'weekly',
-      cloudProvider: 'none',
-      cloudAccountEmail: 'none'
-    });
+  async saveSettings() {
+    const settingSavedResponse = await window.electronAPI?.setUserSettingsData(JSON.stringify(this.settings()));
+    if (settingSavedResponse?.success) {
+      this.toastService.success(settingSavedResponse?.message as string);
+    } else {
+      this.toastService.error(settingSavedResponse?.message as string);
+    }
+  }
 
-    this.toastService.info('Settings Reset', 'Restored default vault configuration.');
+  async resetDefaults() {
+    this.settings.set(this.defaultSettingsValue);
+    const resetResponse = await window.electronAPI?.setUserSettingsData(JSON.stringify(this.settings()));
+    if (resetResponse?.success) {
+      this.toastService.info('Settings Reset Successful');
+    } else {
+      this.toastService.error('Settings Reset Failed', resetResponse?.message);
+    }
   }
 
   // --- LOCAL BACKUP ACTIONS ---
-  async exportLocalBackup()  {
-    const exportVaultResponse = await window.electronAPI?.exportVaultLocally()
-    if(exportVaultResponse?.success) {
+  async exportLocalBackup() {
+    const exportVaultResponse = await window.electronAPI?.exportVaultLocally();
+    if (exportVaultResponse?.success) {
       this.toastService.success('Backup Exported', exportVaultResponse.message);
     } else {
       this.toastService.error('Export Failed', exportVaultResponse?.message);
@@ -135,12 +147,12 @@ export class Settings {
     this.toastService.warning('Cloud Disconnected', 'Cloud synchronization has been disabled.');
   }
 
-  
+
   onModalDismiss() {
     this.showRestoreModal.set(false);
   }
 
-  async onExecuteRestore(event: { backupId: string | null; backupName: string | null; mode: RestoreMode; password?: string }) {
+  async onExecuteRestore(event: { backupId: string | null; backupName: string | null; mode: RestoreMode; password?: string; }) {
     console.log(`Executing ${event.mode} with backup ID: ${event.backupId}`);
     this.showRestoreModal.set(false);
 
@@ -154,4 +166,18 @@ export class Settings {
       // console.log({response});
     }
   }
+
+  handleThemeChange() {
+    const currentTheme = this.settings().theme;
+    // if(currentTheme === 'light' && this.the)
+    
+  }
+
+  handleSettingsUpdate<K extends keyof VaultSettings>(key: K, value: VaultSettings[K]) {
+    this.settings.update((currentSettings) => ({
+      ...currentSettings,
+      [key]: value
+    }));
+  }
+  
 }
