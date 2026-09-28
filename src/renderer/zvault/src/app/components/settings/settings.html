@@ -6,19 +6,19 @@
             <h1 class="text-3xl font-bold text-slate-900 dark:text-slate-100">
                 Vault Settings
             </h1>
-            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            <!-- <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
                 Manage your encryption preferences, auto-lock policies, and
                 vault backups.
-            </p>
+            </p> -->
         </div>
 
         <div class="flex items-center gap-4">
-            <button type="button" (click)="resetDefaults()"
-                class="px-5 py-2.5 text-sm font-semibold cursor-pointer text-slate-600 dark:text-slate-400 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700/80 rounded-xl transition">
+            <button type="button" (click)="resetDefaults()" [disabled]="isSaveChangesBtnDisable()"
+                class="px-5 py-2.5 text-sm font-semibold cursor-pointer text-slate-600 dark:text-slate-400 bg-slate-100 not-disabled:hover:bg-slate-200 dark:bg-slate-800 not-disabled:dark:hover:bg-slate-700/80 rounded-xl transition disabled:bg-slate-900 disabled:text-gray-600/70 disabled:cursor-not-allowed">
                 Reset Defaults
             </button>
-            <button type="button" (click)="saveSettings()"
-                class="px-6 py-2.5 text-sm font-semibold cursor-pointer text-white bg-blue-600 hover:bg-blue-500 active:bg-blue-700 rounded-xl shadow-sm shadow-blue-500/20 transition">
+            <button type="button" (click)="saveSettings()" [disabled]="isSaveChangesBtnDisable()"
+                class="px-6 py-2.5 text-sm font-semibold cursor-pointer text-white bg-blue-600 hover:bg-blue-500 active:bg-blue-700 rounded-xl shadow-sm shadow-blue-500/20 transition disabled:bg-slate-900 disabled:text-gray-600/70 disabled:cursor-not-allowed">
                 Save Changes
             </button>
         </div>
@@ -122,8 +122,8 @@
                             Vault Name
                         </label>
                         <input type="text"
-                            (input)="handleSettingsUpdate('vaultName', settings().vaultName)"
-                            [(ngModel)]="settings().vaultName"
+                            (input)="handleSettingsUpdate('vaultName', settingsService.settings().vaultName)"
+                            [(ngModel)]="settingsService.settings().vaultName"
                             class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500 transition" />
                     </div>
 
@@ -134,28 +134,28 @@
                         </label>
                         <div class="grid grid-cols-3 gap-4">
                             <button type="button"
-                                (click)="settings().theme = 'light'; handleThemeChange()"
-                                [class.border-blue-500]="settings().theme === 'light'"
-                                [class.bg-blue-50/50]="settings().theme === 'light'"
-                                [class.dark:bg-blue-900]="settings().theme === 'light'"
+                                (click)="handleSettingsUpdate('theme', 'light'); handleThemeChange()"
+                                [class.border-blue-500]="settingsService.settings().theme === 'light'"
+                                [class.bg-blue-50/50]="settingsService.settings().theme === 'light'"
+                                [class.dark:bg-blue-900]="settingsService.settings().theme === 'light'"
                                 class="flex items-center justify-center cursor-pointer gap-2 border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:border-slate-300 dark:hover:border-slate-700">
                                 ☀️ Light
                             </button>
 
                             <button type="button"
-                                (click)="settings().theme = 'dark'"
-                                [class.border-blue-500]="settings().theme === 'dark'"
-                                [class.bg-blue-50/50]="settings().theme === 'dark'"
-                                [class.dark:bg-blue-900]="settings().theme === 'dark'"
+                                (click)="handleSettingsUpdate('theme', 'dark')"
+                                [class.border-blue-500]="settingsService.settings().theme === 'dark'"
+                                [class.bg-blue-50/50]="settingsService.settings().theme === 'dark'"
+                                [class.dark:bg-blue-900]="settingsService.settings().theme === 'dark'"
                                 class="flex items-center justify-center cursor-pointer gap-2 border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:border-slate-300 dark:hover:border-slate-700">
                                 🌙 Dark
                             </button>
 
                             <button type="button"
-                                (click)="settings().theme = 'system'"
-                                [class.border-blue-500]="settings().theme === 'system'"
-                                [class.bg-blue-50/50]="settings().theme === 'system'"
-                                [class.dark:bg-blue-900]="settings().theme === 'system'"
+                                (click)="handleSettingsUpdate('theme', 'system')"
+                                [class.border-blue-500]="settingsService.settings().theme === 'system'"
+                                [class.bg-blue-50/50]="settingsService.settings().theme === 'system'"
+                                [class.dark:bg-blue-900]="settingsService.settings().theme === 'system'"
                                 class="flex items-center justify-center cursor-pointer gap-2 border border-slate-200 dark:border-slate-800 rounded-xl p-4 text-sm font-medium text-slate-700 dark:text-slate-300 transition hover:border-slate-300 dark:hover:border-slate-700">
                                 💻 System
                             </button>
@@ -177,12 +177,12 @@
                             </div>
                             <span
                                 class="text-sm font-mono font-bold text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg">
-                                {{ settings().clipboardClearDelay }}s
+                                {{ settingsService.settings().clipboardClearDelay }}s
                             </span>
                         </div>
                         <input type="range" min="5" max="120" step="5"
-                            (change)="handleSettingsUpdate('clipboardClearDelay', settings().clipboardClearDelay)"
-                            [(ngModel)]="settings().clipboardClearDelay"
+                            (change)="handleSettingsUpdate('clipboardClearDelay', settingsService.settings().clipboardClearDelay)"
+                            [(ngModel)]="settingsService.settings().clipboardClearDelay"
                             class="w-full accent-blue-600 mt-3 cursor-pointer h-2 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none" />
                     </div>
 
@@ -199,8 +199,8 @@
                             </p>
                         </div>
                         <input type="checkbox"
-                            (change)="handleSettingsUpdate('maskSensitiveData', settings().maskSensitiveData)"
-                            [(ngModel)]="settings().maskSensitiveData"
+                            (change)="handleSettingsUpdate('maskSensitiveData', settingsService.settings().maskSensitiveData)"
+                            [(ngModel)]="settingsService.settings().maskSensitiveData"
                             class="w-5 h-5 text-blue-600 border-slate-300 dark:border-slate-700 rounded focus:ring-0 cursor-pointer" />
                     </div>
                 </div>
@@ -227,8 +227,8 @@
                             Inactivity Auto-Lock
                         </label>
                         <select
-                            (change)="handleSettingsUpdate('autoLockDelay', settings().autoLockDelay)"
-                            [(ngModel)]="settings().autoLockDelay"
+                            (change)="handleSettingsUpdate('autoLockDelay', settingsService.settings().autoLockDelay)"
+                            [(ngModel)]="settingsService.settings().autoLockDelay"
                             class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500 cursor-pointer">
                             <option [ngValue]="0">Immediately</option>
                             <option [ngValue]="1">After 1 minute</option>
@@ -251,8 +251,8 @@
                             </p>
                         </div>
                         <input type="checkbox"
-                            (change)="handleSettingsUpdate('lockOnSystemSleep', settings().lockOnSystemSleep)"
-                            [(ngModel)]="settings().lockOnSystemSleep"
+                            (change)="handleSettingsUpdate('lockOnSystemSleep', settingsService.settings().lockOnSystemSleep)"
+                            [(ngModel)]="settingsService.settings().lockOnSystemSleep"
                             class="w-5 h-5 text-blue-600 border-slate-300 dark:border-slate-700 rounded focus:ring-0 cursor-pointer" />
                     </div>
 
@@ -269,8 +269,8 @@
                             </p>
                         </div>
                         <input type="checkbox"
-                            (change)="handleSettingsUpdate('clearClipboardOnLock',settings().clearClipboardOnLock)"
-                            [(ngModel)]="settings().clearClipboardOnLock"
+                            (change)="handleSettingsUpdate('clearClipboardOnLock',settingsService.settings().clearClipboardOnLock)"
+                            [(ngModel)]="settingsService.settings().clearClipboardOnLock"
                             class="w-5 h-5 text-blue-600 border-slate-300 dark:border-slate-700 rounded focus:ring-0 cursor-pointer" />
                     </div>
                 </div>
@@ -337,7 +337,7 @@
                                     cloud service.
                                 </p>
                             </div>
-                            @if (settings().cloudProvider !== 'none') {
+                            @if (settingsService.settings().cloudProvider !== 'none') {
                             <span
                                 class="text-xs font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/50 px-2.5 py-1 rounded-md">
                                 Connected
@@ -345,7 +345,7 @@
                             }
                         </div>
 
-                        @if (settings().cloudProvider === 'none') {
+                        @if (settingsService.settings().cloudProvider === 'none') {
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <button type="button"
                                 (click)="connectCloud('googleDrive')"
@@ -365,11 +365,11 @@
                             <div>
                                 <p
                                     class="text-sm font-bold text-slate-800 dark:text-slate-200 capitalize">
-                                    {{ settings().cloudProvider }} Account
+                                    {{ settingsService.settings().cloudProvider }} Account
                                 </p>
                                 <p
                                     class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                    {{ settings().cloudAccountEmail }}
+                                    {{ settingsService.settings().cloudAccountEmail }}
                                 </p>
                             </div>
                             <button type="button" (click)="disconnectCloud()"
@@ -393,17 +393,17 @@
                             </p>
                         </div>
                         <input type="checkbox"
-                            [(ngModel)]="settings().autoBackupEnabled"
+                            [(ngModel)]="settingsService.settings().autoBackupEnabled"
                             class="w-5 h-5 text-blue-600 border-slate-300 dark:border-slate-700 rounded focus:ring-0 cursor-pointer" />
                     </div>
 
-                    @if (settings().autoBackupEnabled) {
+                    @if (settingsService.settings().autoBackupEnabled) {
                     <div>
                         <label
                             class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                             Backup Frequency
                         </label>
-                        <select [(ngModel)]="settings().autoBackupInterval"
+                        <select [(ngModel)]="settingsService.settings().autoBackupInterval"
                             class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500 cursor-pointer">
                             <option value="daily">Daily</option>
                             <option value="weekly">Weekly</option>

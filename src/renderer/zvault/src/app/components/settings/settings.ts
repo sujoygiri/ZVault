@@ -6,28 +6,9 @@ import { CloudRestore, RestoreMode } from '../modals/cloud-restore/cloud-restore
 import { CloudDrive, GoogleDriveFile } from '@zvault/shared-api';
 import { GlobalService } from '../../services/global.service';
 import { ThemeService } from '../../services/theme.service';
+import { SettingsService, VaultSettings } from '../../services/settings.service';
 
 export type SettingsTab = 'general' | 'security' | 'backup' | 'notifications';
-
-export interface VaultSettings {
-  // General
-  vaultName: string;
-  theme: 'system' | 'dark' | 'light';
-  clipboardClearDelay: number; // in seconds
-  maskSensitiveData: boolean;
-
-  // Security
-  autoLockDelay: number; // in minutes (0 = immediately)
-  lockOnSystemSleep: boolean;
-  clearClipboardOnLock: boolean;
-
-  // Backup & Sync
-  autoBackupEnabled: boolean;
-  autoBackupInterval: 'daily' | 'weekly' | 'monthly';
-  cloudProvider: CloudDrive;
-  cloudAccountEmail?: string;
-  lastBackupTimestamp?: string;
-}
 
 @Component({
   selector: 'app-settings',
@@ -39,67 +20,45 @@ export interface VaultSettings {
   templateUrl: './settings.html',
   styleUrl: './settings.css',
 })
-export class Settings implements OnInit {
+export class Settings {
 
   activeTab: SettingsTab = 'general';
   addSetting = output<void>();
   showRestoreModal = signal(false);
-  availableBackups = signal<GoogleDriveFile[]>([]); // Optional custom backups list
-
-  // Vault Settings Model State
-  defaultSettingsValue: VaultSettings = {
-    vaultName: 'Personal Master Vault',
-    theme: 'dark',
-    clipboardClearDelay: 30,
-    maskSensitiveData: true,
-    autoLockDelay: 5,
-    lockOnSystemSleep: true,
-    clearClipboardOnLock: true,
-    autoBackupEnabled: false,
-    autoBackupInterval: 'weekly',
-    cloudProvider: 'none',
-    cloudAccountEmail: 'none'
-  };
-
-  settings = signal<VaultSettings>(this.defaultSettingsValue);
+  availableBackups = signal<GoogleDriveFile[]>([]);
+  isSaveChangesBtnDisable = signal<boolean>(true);
+  storedSettings = signal<VaultSettings | null>(null);
+  timeOutId: any;
 
   constructor (
     private globalService: GlobalService,
     private toastService: ToastService,
+    protected settingsService: SettingsService,
     private themeService: ThemeService
   ) {
-    effect(async () => {
-      console.log(this.settings());
-    });
-  }
-  
-  ngOnInit(): void {
-    console.log('Hi');
-    this.loadStoredSettings();
-  }
-  
-  async loadStoredSettings() {
-    const storedSettings = await window.electronAPI?.getUserSettingsData();
-    if (storedSettings?.success) {
-      this.settings.set(storedSettings.data);
-    }
+    this.storedSettings.set(this.settingsService.settings());
   }
 
   async saveSettings() {
-    const settingSavedResponse = await window.electronAPI?.setUserSettingsData(JSON.stringify(this.settings()));
+    this.storedSettings.update(() => ({...this.settingsService.settings()}));
+    const settingSavedResponse = await this.settingsService.saveSettings(this.settingsService.settings());
     if (settingSavedResponse?.success) {
+      this.isSaveChangesBtnDisable.set(true);
       this.toastService.success(settingSavedResponse?.message as string);
     } else {
+      this.isSaveChangesBtnDisable.set(false);
       this.toastService.error(settingSavedResponse?.message as string);
     }
   }
-
+  
   async resetDefaults() {
-    this.settings.set(this.defaultSettingsValue);
-    const resetResponse = await window.electronAPI?.setUserSettingsData(JSON.stringify(this.settings()));
+    this.storedSettings.update(() => ({ ...this.settingsService.settings() }));
+    const resetResponse = await this.settingsService.saveSettings(this.settingsService.defaultSettingsValue);
     if (resetResponse?.success) {
+      this.isSaveChangesBtnDisable.set(true);
       this.toastService.info('Settings Reset Successful');
     } else {
+      this.isSaveChangesBtnDisable.set(false);
       this.toastService.error('Settings Reset Failed', resetResponse?.message);
     }
   }
@@ -141,8 +100,8 @@ export class Settings implements OnInit {
   }
 
   disconnectCloud(): void {
-    this.settings().cloudProvider = 'none';
-    this.settings().cloudAccountEmail = 'none';
+    this.settingsService.settings().cloudProvider = 'none';
+    this.settingsService.settings().cloudAccountEmail = 'none';
 
     this.toastService.warning('Cloud Disconnected', 'Cloud synchronization has been disabled.');
   }
@@ -168,16 +127,25 @@ export class Settings implements OnInit {
   }
 
   handleThemeChange() {
-    const currentTheme = this.settings().theme;
+    const currentTheme = this.settingsService.settings().theme;
     // if(currentTheme === 'light' && this.the)
-    
+
   }
 
   handleSettingsUpdate<K extends keyof VaultSettings>(key: K, value: VaultSettings[K]) {
-    this.settings.update((currentSettings) => ({
-      ...currentSettings,
-      [key]: value
-    }));
+    if (this.timeOutId) clearTimeout(this.timeOutId);
+    this.timeOutId = setTimeout(() => {
+      this.settingsService.settings.update((currentSettings) => ({
+        ...currentSettings,
+        [key]: value
+      }));
+      const isSettingsValueEqual = JSON.stringify(this.settingsService.settings()) === JSON.stringify(this.storedSettings());
+      if (isSettingsValueEqual) {
+        this.isSaveChangesBtnDisable.set(true);
+      } else {
+        this.isSaveChangesBtnDisable.set(false);
+      }
+    }, 500);
   }
-  
+
 }
