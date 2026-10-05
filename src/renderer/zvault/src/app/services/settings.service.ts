@@ -1,31 +1,11 @@
 import { Injectable, signal } from '@angular/core';
-import { CloudDrive } from '@zvault/shared-api';
-
-export interface VaultSettings {
-  // General
-  vaultName: string;
-  theme: 'system' | 'dark' | 'light';
-  clipboardClearDelay: number; // in seconds
-  maskSensitiveData: boolean;
-
-  // Security
-  autoLockDelay: number; // in minutes (0 = immediately)
-  lockOnSystemSleep: boolean;
-  clearClipboardOnLock: boolean;
-
-  // Backup & Sync
-  autoBackupEnabled: boolean;
-  autoBackupInterval: 'daily' | 'weekly' | 'monthly';
-  cloudProvider: CloudDrive;
-  cloudAccountEmail?: string;
-  lastBackupTimestamp?: string;
-}
+import { CloudDrive, UserSettings } from '@zvault/shared-api';
 
 @Injectable({
   providedIn: 'root',
 })
 export class SettingsService {
-  defaultSettingsValue: VaultSettings = {
+  defaultSettingsValue: UserSettings = {
     vaultName: 'Personal Master Vault',
     theme: 'dark',
     clipboardClearDelay: 30,
@@ -39,20 +19,18 @@ export class SettingsService {
     cloudAccountEmail: 'none'
   };
 
-  settings = signal<VaultSettings>(this.defaultSettingsValue);
-
-  constructor() {
-    this.loadStoredSettings();
-  }
+  settings = signal<UserSettings>(this.defaultSettingsValue);
+  storedSettings = signal<UserSettings | null>(null);
 
   async loadStoredSettings() {
-    const storedSettings = await window.electronAPI?.getUserSettingsData();
-    if (storedSettings?.success) {
-      this.settings.set(storedSettings.data);
+    const settingsResponse = await window.electronAPI?.getUserSettingsData();
+    if (settingsResponse?.success) {      
+      this.settings.set(settingsResponse.data);
+      this.storedSettings.set({...settingsResponse.data});
     }
   }
 
-  async saveSettings(settingsToSave: VaultSettings) {
+  async saveSettings(settingsToSave: UserSettings) {
     this.settings.set(settingsToSave);
     return await window.electronAPI?.setUserSettingsData(JSON.stringify(settingsToSave));
   }

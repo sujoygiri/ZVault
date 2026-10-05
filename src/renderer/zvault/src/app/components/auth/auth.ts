@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, signal, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { ResponsePayload } from '@zvault/shared-api';
@@ -17,6 +17,7 @@ export class Auth implements OnInit {
 
   @Input() isVaultExist!: boolean;
   @Output() vaultDataEmitter = new EventEmitter<ResponsePayload>();
+  isLoading = signal<boolean>(false);
   passwordVisibilityState: boolean = false;
   createVaultForm!: FormGroup;
   unlockVaultForm!: FormGroup;
@@ -52,20 +53,24 @@ export class Auth implements OnInit {
   }
 
   async handleVaultUnlock() {
+    this.isLoading.set(true);
     const { masterPassword } = this.unlockVaultForm.value;
     const vaultUnlockResponse = await window.electronAPI?.unlockVault(masterPassword);
     if (vaultUnlockResponse?.success) {
       const vaultData = await this.globalService.getVaultData();
       this.vaultDataEmitter.emit(vaultData);
+      this.isLoading.set(false);
     }
   }
 
   async handleVaultCreate() {
+    this.isLoading.set(true);
     const { masterPassword } = this.createVaultForm.value;
     const vaultCreateResponse = await window.electronAPI?.createNewVault(masterPassword);
     if (vaultCreateResponse?.success) {
       const vaultData = await this.globalService.getVaultData();
       this.vaultDataEmitter.emit(vaultData);
+      this.isLoading.set(false);
     }
   }
 }

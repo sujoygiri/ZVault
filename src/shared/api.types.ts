@@ -1,18 +1,40 @@
 /// <reference types="electron" />
-
 import { drive_v3 } from "googleapis";
-// render process type
-export type Categories = 'General' | 'Work' | 'Personal' | 'Finance' | 'Social' | 'Entertainment' | '';
-export type ModalName = "backup_action" | "backup_list" | null;
-export type SortingOrder = "name_asc" | "name_desc" | "date_asc" | "date_desc";
 
 // main process types
 export type DataType = "password" | "text";
 export type DataTables = "accounts" | "texts";
 export type CloudDrive = "googleDrive" | "oneDrive" | "dropBox" | "none";
 export type GoogleDriveFile = drive_v3.Schema$File;
+export interface AppActiveState { state: 'blurred' | 'focused'; }
+export interface UserSettings {
+    // General
+    vaultName: string;
+    theme: 'system' | 'dark' | 'light';
+    clipboardClearDelay: number; // in seconds
+    maskSensitiveData: boolean;
+
+    // Security
+    autoLockDelay: number; // in minutes (0 = immediately)
+    lockOnSystemSleep: boolean;
+    clearClipboardOnLock: boolean;
+
+    // Backup & Sync
+    autoBackupEnabled: boolean;
+    autoBackupInterval: 'daily' | 'weekly' | 'monthly';
+    cloudProvider: CloudDrive;
+    cloudAccountEmail?: string;
+    lastBackupTimestamp?: string;
+}
+
+// render process type
+export type Categories = 'General' | 'Work' | 'Personal' | 'Finance' | 'Social' | 'Entertainment' | '';
+export type ModalName = "backup_action" | "backup_list" | null;
+export type SortingOrder = "name_asc" | "name_desc" | "date_asc" | "date_desc";
 
 export interface IElectronAPI {
+    onSystemThemeChange: (callback: (value: { isDarkMode: boolean; }) => void) => Electron.IpcRenderer,
+    onWindowStateChange: (callback: (value: AppActiveState) => void) => Electron.IpcRenderer,
     createNewVault: (password: string) => Promise<{ success: boolean, message: string; }>,
     vaultExistStatus: () => Promise<boolean>,
     unlockVault: (password: string) => Promise<{ success: boolean, message: string; }>,
@@ -22,13 +44,15 @@ export interface IElectronAPI {
     decryptSensitiveData: (id: string, type: DataType) => Promise<string>,
     fetchData: (type: DataType, pageNum: number, pageSize: number) => Promise<ResponsePayload>,
     searchData: (category: Categories, searchInput: string, type: DataType, pageNum: number, pageSize: number, sortingOrder: SortingOrder) => Promise<ResponsePayload>,
-    getUserSettingsData: () => Promise<{ success: boolean;data: any;}>,
-    setUserSettingsData: (settingsData: string) => Promise<{success: boolean;message: string;}>,
-    connectToCloud: (cloudDrive: CloudDrive) => Promise<{ isBackupPresent: boolean; data: drive_v3.Schema$File[] | null; message: string; } | undefined>,
-    mergeGoogleCloudBackupFile: (backFileId: string, backFilename: string, masterPassword: string) => Promise<any>,
+    getUserSettingsData: () => Promise<{ success: boolean; data: any; }>,
+    setUserSettingsData: (settingsData: string) => Promise<{ success: boolean; message: string; }>,
     exportVaultLocally: () => Promise<{ success: boolean, message: string; }>,
+    copyToClipBoard: (data: string) => Promise<ApiResponse | undefined>,
+
     openUrl: (url: string) => void,
 
+    mergeGoogleCloudBackupFile: (backFileId: string, backFilename: string, masterPassword: string) => Promise<any>,
+    connectToCloud: (cloudDrive: CloudDrive) => Promise<{ isBackupPresent: boolean; data: drive_v3.Schema$File[] | null; message: string; } | undefined>,
 
     cloudSyncPasswordError: (callback: (errMessage: string) => void) => Electron.IpcRenderer,
     cloudSyncPasswordSubmit: (password: string) => void,

@@ -6,6 +6,8 @@ import { ItemCardStyleDirective } from '../../directives/item-card-style.directi
 import { Header } from '../header/header';
 import { EmptyState } from '../empty-state/empty-state';
 import { DataType, PasswordDetails } from '@zvault/shared-api';
+import { ToastService } from '../../services/toast.service';
+import { SettingsService } from '../../services/settings.service';
 
 @Component({
   selector: 'app-password-view',
@@ -29,6 +31,11 @@ export class PasswordView {
   openNoteView = output<{ title: string, content: string; }>();
   editPassword = output<{item: PasswordDetails, type: DataType}>();
   deletePassword = output<{ id: string; title: string; type: DataType }>();
+
+  constructor(
+    private toastService: ToastService,
+    protected settingsService: SettingsService,
+  ) {}
 
   async triggerNoteView(id: string, noteTitle: string, toggleState: ToggleStateDirective) {
     await this.fetchDecryptedData(id, toggleState);
@@ -64,5 +71,20 @@ export class PasswordView {
 
   async handleUrlOpen(url: string) {
     window.electronAPI?.openUrl(url);
+  }
+
+  async copyData(type: 'usernameOrEmail' | 'password', id: string, toggleState: ToggleStateDirective) {
+    await this.fetchDecryptedData(id, toggleState);
+    let copyResponse;
+    if(type === 'usernameOrEmail') {
+      copyResponse = await window.electronAPI?.copyToClipBoard(toggleState.attachedData().usernameOrEmail);
+    } else {
+      copyResponse = await window.electronAPI?.copyToClipBoard(toggleState.attachedData().password);
+    }
+    if(copyResponse?.success) {
+      this.toastService.info("Copy", copyResponse.message, 2000);
+    } else {
+      this.toastService.error("Copy", "Copy failed!", 3000);
+    }
   }
 }

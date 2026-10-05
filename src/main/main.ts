@@ -7,7 +7,9 @@ import {
     shell,
     dialog,
     safeStorage,
-    net
+    net,
+    nativeTheme,
+    clipboard
 } from "electron";
 import path from "node:path";
 import os from "node:os";
@@ -25,7 +27,21 @@ import {
 import argon2 from "@node-rs/argon2";
 import { drive_v3, google } from "googleapis";
 import AdmZip from "adm-zip";
-import { Categories, CloudDrive, DataTables, DataType, NewPassword, NewText, PasswordDetails, SortingOrder, TextDetails, ApiResponse } from "../shared/api.types";
+import { 
+    Categories, 
+    CloudDrive, 
+    DataTables, 
+    DataType, 
+    NewPassword, 
+    NewText, 
+    PasswordDetails, 
+    SortingOrder, 
+    TextDetails, 
+    ApiResponse,
+    UserSettings,
+    AppActiveState
+} from "../shared/api.types";
+import { setTimeout } from "node:timers";
 
 const rawCredentials: any = fs.readFileSync(path.join(__dirname, "../../credential.env"), "utf8");
 const credential: { APP_TOKEN: string; } = JSON.parse(rawCredentials);
@@ -74,11 +90,13 @@ const suffixes = [
     "hard", "haunt", "head", "heart", "helm", "high", "hill", "hold", "hollow", "home"
 ];
 
+let userSettingsData:UserSettings;
 let vaultDEK: Buffer | null = null;
 let dbConnection: DuckDBConnection | null = null;
 let mainWindow: BrowserWindow | null = null;
-let passwordWindow: BrowserWindow | null = null;
-
+let copyTimeOutId: any;
+let windowBlurTimeOutId: any;
+let windowFocusTimeOutId: any;
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -100,8 +118,20 @@ function createWindow() {
         return { action: "deny" };
     });
 
-    // mainWindow.webContents.closeDevTools();
-    // mainWindow.removeMenu();
+    mainWindow.on("blur", () => {
+        if(windowBlurTimeOutId) clearTimeout(windowBlurTimeOutId);
+        windowBlurTimeOutId = setTimeout(() => {
+            mainWindow?.webContents.send("window:state", {state: 'blurred'} as AppActiveState)
+        }, 30 * 1000);
+    });
+    
+    mainWindow.on("focus", () => {
+        if(windowFocusTimeOutId) clearTimeout(windowFocusTimeOutId);
+        if(windowBlurTimeOutId) clearTimeout(windowBlurTimeOutId);
+        windowFocusTimeOutId = setTimeout(() => {
+            mainWindow?.webContents.send("window:state", {state: 'focused'} as AppActiveState)
+        }, 0);
+    });
 
     if (app.isPackaged) {
         // In packaged app, files are next to the executable
@@ -136,6 +166,7 @@ app.whenReady().then(() => {
     ipcMain.handle("mergeGoogleCloudBackupFile", mergeGoogleCloudBackupFile);
     ipcMain.handle("getUserSettingsData", getUserSettingsData);
     ipcMain.handle("setUserSettingsData", setUserSettingsData);
+    ipcMain.handle("copyToClipBoard", copyToClipBoard);
     // ipcMain.handle("importCloudBackup", importGDriveData);
     // ipcMain.handle("checkExistingBackup", connectToGoogleDrive);
     // ipcMain.handle("checkTokenValidity", checkTokenValidity);
@@ -156,9 +187,32 @@ app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
 
-// context bridge api calls handler
+nativeTheme.on("updated", () => {
+    mainWindow?.webContents.send('onSystemThemeChange', {isDarkMode: nativeTheme.shouldUseDarkColors});
+});
+
 function vaultExistStatus(): boolean {
     return fs.existsSync(VAULT_PATH) && fs.existsSync(VAULT_DATA_PATH);
+}
+
+// context bridge api calls handler
+async function copyToClipBoard(
+    _event: IpcMainInvokeEvent,
+    data: string
+): Promise<ApiResponse | undefined> {
+    try {
+        clipboard.writeText(data);
+        if(copyTimeOutId) clearTimeout(copyTimeOutId);
+        copyTimeOutId = setTimeout(() => {
+            clipboard.clear();
+        }, ((userSettingsData.clipboardClearDelay ?? 20) * 1000));
+        return {
+            success: true,
+            message: "Copied"
+        }
+    } catch (error) {
+        await handelError(error, 'Clipboard Action', copyToClipBoard.name, 'Copy failed!');
+    }
 }
 
 async function openUrl(_event: IpcMainEvent, url: string): Promise<ApiResponse> {
@@ -341,22 +395,23 @@ async function getAppData() {
 async function getUserSettingsData(_event: IpcMainInvokeEvent): Promise<ApiResponse> {
     try {
         if(fs.existsSync(USER_SETTINGS_DATA_PATH)){
-            const userSettingsData = await fs.promises.readFile(USER_SETTINGS_DATA_PATH, {encoding: 'utf8'});
-            const parsedData = JSON.parse(userSettingsData);
-            return {success: true, data: parsedData};
+            const rawData = await fs.promises.readFile(USER_SETTINGS_DATA_PATH, {encoding: 'utf8'});
+            userSettingsData = JSON.parse(rawData) as UserSettings;
+            return { success: true, data: userSettingsData };
         }
         return {success: false, data: null};
     } catch (error) {
-        return await handelError(error, 'User Settings', getUserSettingsData.name, 'Settings Data Corrupted. Rest to Defaults!');
+        return await handelError(error, 'User Settings', getUserSettingsData.name, 'Settings Data Corrupted. Reset to Defaults!');
     }
 }
 
 async function setUserSettingsData(_event: IpcMainInvokeEvent, settingsData: string): Promise<ApiResponse> {
     try {
+        userSettingsData = JSON.parse(settingsData) as UserSettings;
         await fs.promises.writeFile(USER_SETTINGS_DATA_PATH, settingsData, {encoding: 'utf8'});
         return {success: true, message: "Settings saved successfully!"};
     } catch (error) {
-        return await handelError(error, 'Setting Store', setUserSettingsData.name, 'Failed to save settings!');
+        return await handelError(error, 'Save Settings', setUserSettingsData.name, 'Failed to save settings!');
     }
 }
 

@@ -3,10 +3,10 @@ import { ToastService } from '../../services/toast.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CloudRestore, RestoreMode } from '../modals/cloud-restore/cloud-restore';
-import { CloudDrive, GoogleDriveFile } from '@zvault/shared-api';
+import { CloudDrive, GoogleDriveFile, UserSettings } from '@zvault/shared-api';
 import { GlobalService } from '../../services/global.service';
 import { ThemeService } from '../../services/theme.service';
-import { SettingsService, VaultSettings } from '../../services/settings.service';
+import { SettingsService } from '../../services/settings.service';
 
 export type SettingsTab = 'general' | 'security' | 'backup' | 'notifications';
 
@@ -27,7 +27,6 @@ export class Settings {
   showRestoreModal = signal(false);
   availableBackups = signal<GoogleDriveFile[]>([]);
   isSaveChangesBtnDisable = signal<boolean>(true);
-  storedSettings = signal<VaultSettings | null>(null);
   timeOutId: any;
 
   constructor (
@@ -35,15 +34,18 @@ export class Settings {
     private toastService: ToastService,
     protected settingsService: SettingsService,
     private themeService: ThemeService
-  ) {
-    this.storedSettings.set(this.settingsService.settings());
+  ) { 
+    window.electronAPI?.onSystemThemeChange((theme) => {
+      this.handleThemeChange('system');
+    });
   }
 
   async saveSettings() {
-    this.storedSettings.update(() => ({...this.settingsService.settings()}));
+    this.settingsService.storedSettings.update(() => ({ ...this.settingsService.settings() }));
     const settingSavedResponse = await this.settingsService.saveSettings(this.settingsService.settings());
     if (settingSavedResponse?.success) {
       this.isSaveChangesBtnDisable.set(true);
+      this.handleThemeChange(this.settingsService.settings().theme);
       this.toastService.success(settingSavedResponse?.message as string);
     } else {
       this.isSaveChangesBtnDisable.set(false);
@@ -52,10 +54,11 @@ export class Settings {
   }
   
   async resetDefaults() {
-    this.storedSettings.update(() => ({ ...this.settingsService.settings() }));
+    this.settingsService.storedSettings.update(() => ({ ...this.settingsService.settings() }));
     const resetResponse = await this.settingsService.saveSettings(this.settingsService.defaultSettingsValue);
     if (resetResponse?.success) {
       this.isSaveChangesBtnDisable.set(true);
+      this.handleThemeChange(this.settingsService.settings().theme);
       this.toastService.info('Settings Reset Successful');
     } else {
       this.isSaveChangesBtnDisable.set(false);
@@ -126,20 +129,31 @@ export class Settings {
     }
   }
 
-  handleThemeChange() {
-    const currentTheme = this.settingsService.settings().theme;
-    // if(currentTheme === 'light' && this.the)
-
+  handleThemeChange(theme: 'system' | 'dark' | 'light') {   
+    switch (theme) {
+      case 'light':
+        this.themeService.setLightTheme();
+        break;
+      case 'dark':
+        this.themeService.setDarkTheme();
+        break;
+      case 'system':
+        this.themeService.setSystemTheme();
+        break;
+      default:
+        this.themeService.setTheme();
+        break;
+    }
   }
 
-  handleSettingsUpdate<K extends keyof VaultSettings>(key: K, value: VaultSettings[K]) {
+  handleSettingsUpdate<K extends keyof UserSettings>(key: K, value: UserSettings[K]) {
     if (this.timeOutId) clearTimeout(this.timeOutId);
     this.timeOutId = setTimeout(() => {
       this.settingsService.settings.update((currentSettings) => ({
         ...currentSettings,
         [key]: value
       }));
-      const isSettingsValueEqual = JSON.stringify(this.settingsService.settings()) === JSON.stringify(this.storedSettings());
+      const isSettingsValueEqual = JSON.stringify(this.settingsService.settings()) === JSON.stringify(this.settingsService.storedSettings());
       if (isSettingsValueEqual) {
         this.isSaveChangesBtnDisable.set(true);
       } else {

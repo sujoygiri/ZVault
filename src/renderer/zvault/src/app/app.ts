@@ -5,6 +5,8 @@ import { Auth } from "./components/auth/auth";
 import { Content } from './components/content/content';
 import { ResponsePayload } from '@zvault/shared-api';
 import { Toasts } from './components/toasts/toasts';
+import { ThemeService } from './services/theme.service';
+import { SettingsService } from './services/settings.service';
 
 @Component({
   selector: 'app-root',
@@ -24,6 +26,17 @@ export class App implements OnInit {
   isVaultExist = signal<boolean>(false);
   showAuthForm = signal<boolean>(true);
   vaultData = signal<ResponsePayload | null>(null);
+
+  constructor(
+    private themeService: ThemeService, 
+    private settingsService: SettingsService
+  ) {
+    this.themeService.setTheme();
+    this.settingsService.loadStoredSettings();
+    window.electronAPI?.onWindowStateChange((value) => {
+      console.log(value.state);
+    })
+  }
 
   ngOnInit(): void {
     this.handleVaultExistStatus();
