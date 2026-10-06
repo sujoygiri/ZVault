@@ -6,12 +6,14 @@ import { TimeAgoPipe } from '../../utils/time-ago.pipe';
 import { Header } from '../header/header';
 import { DataType, TextDetails } from '@zvault/shared-api';
 import { GlobalService } from '../../services/global.service';
+import { ToolTip } from '../tool-tip/tool-tip';
 
 @Component({
   selector: 'app-text-view',
   imports: [
     CommonModule,
     Header,
+    ToolTip,
     ItemCardStyleDirective,
     ToggleStateDirective,
     TimeAgoPipe

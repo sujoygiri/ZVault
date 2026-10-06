@@ -8,6 +8,7 @@ import { EmptyState } from '../empty-state/empty-state';
 import { DataType, PasswordDetails } from '@zvault/shared-api';
 import { ToastService } from '../../services/toast.service';
 import { SettingsService } from '../../services/settings.service';
+import { ToolTip } from '../tool-tip/tool-tip';
 
 @Component({
   selector: 'app-password-view',
@@ -17,7 +18,8 @@ import { SettingsService } from '../../services/settings.service';
     ToggleStateDirective,
     TimeAgoPipe,
     Header,
-    EmptyState
+    EmptyState,
+    ToolTip
   ],
   templateUrl: './password-view.html',
   styleUrl: './password-view.css',

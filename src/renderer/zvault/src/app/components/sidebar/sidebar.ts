@@ -1,12 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { Component, input, output, signal } from '@angular/core';
+import { Component, output, signal } from '@angular/core';
 import { MenuItem } from '../../services/global.service';
+import { ToolTip } from '../tool-tip/tool-tip';
 
 
 
 @Component({
   selector: 'app-sidebar',
-  imports: [CommonModule],
+  imports: [
+    CommonModule,
+    ToolTip
+  ],
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.css',
 })

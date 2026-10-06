@@ -42,7 +42,7 @@ export interface IElectronAPI {
     deleteData: (id: string, type: DataType) => Promise<{ success: boolean, message: string; }>,
     editData: (updatedData: PasswordDetails | TextDetails) => Promise<{ success: boolean, message: string; }>;
     decryptSensitiveData: (id: string, type: DataType) => Promise<string>,
-    fetchData: (type: DataType, pageNum: number, pageSize: number) => Promise<ResponsePayload>,
+    fetchData: (type: DataType, pageNum: number, pageSize: number, sortingOrder: SortingOrder) => Promise<ResponsePayload>,
     searchData: (category: Categories, searchInput: string, type: DataType, pageNum: number, pageSize: number, sortingOrder: SortingOrder) => Promise<ResponsePayload>,
     getUserSettingsData: () => Promise<{ success: boolean; data: any; }>,
     setUserSettingsData: (settingsData: string) => Promise<{ success: boolean; message: string; }>,

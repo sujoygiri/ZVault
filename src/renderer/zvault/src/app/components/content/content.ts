@@ -61,10 +61,6 @@ export class Content implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    console.log("Hi");
-
-    console.log(this.vaultData());
-
     this.vaultItemPasswords.set(this.vaultData()?.rows as PasswordDetails[]);
   }
 
@@ -80,6 +76,8 @@ export class Content implements OnInit {
     if (item === 'texts') {
       this.globalService.selectedDataType.set('text');
       const vaultData = await this.globalService.getVaultData();
+      console.log(vaultData);
+      
       this.vaultItemTexts.set(vaultData?.rows as TextDetails[]);
     }
   }

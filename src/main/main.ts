@@ -344,7 +344,7 @@ async function getTableData(
     columnName: string,
     pageNum: number,
     pageSize: number,
-    sortingOrder: "ASC" | "DESC",
+    sortingOrder: string,
 ) {
     try {
         let offset = (pageNum - 1) * pageSize;
@@ -689,11 +689,12 @@ async function fetchData(
     type: DataType,
     pageNum: number,
     pageSize: number,
+    sortingOrder: SortingOrder
 ) {
     try {
-        let columnName: string = "last_modified";
         let tableName = getDataTableName(type);
-        return await getTableData(tableName, columnName, pageNum, pageSize, "ASC");
+        let {columnName, order} = getSortingColumnAndOrder(sortingOrder);
+        return await getTableData(tableName, columnName, pageNum, pageSize, order);
     } catch (error) {
         throw new Error("Something went wrong!");
     }
@@ -734,8 +735,8 @@ async function searchData(
             const tableName = getDataTableName(type);
             const { columnName, order } = getSortingColumnAndOrder(sortingOrder);
             let offset = (pageNum - 1) * pageSize;
-            let passwordSearchQueryResult: DuckDBMaterializedResult;
-            let searchPasswordCountQueryResult: DuckDBMaterializedResult;
+            let searchQueryResult: DuckDBMaterializedResult;
+            let dataCountQueryResult: DuckDBMaterializedResult;
             let dataToBeReturned = ``;
             let columnToBeSearched = ``;
             if (type === "password") {
@@ -746,18 +747,18 @@ async function searchData(
                 dataToBeReturned = `id, title, category, is_favorite, last_modified`;
                 columnToBeSearched = `title LIKE $searchTitle`;
             }
-            let passwordSearchQuery = `SELECT ${dataToBeReturned} FROM ${tableName} WHERE ` + columnToBeSearched + `${category ? ' AND category = $searchCategory' : ' '} ` + `ORDER BY ${columnName} ${order} LIMIT $limit OFFSET $offset`;
-            let searchPasswordCountQuery = `SELECT COUNT(*) AS total_count FROM ${tableName} WHERE ` + columnToBeSearched + `${category ? ' AND category = $searchCategory' : ''}`;
+            let searchQuery = `SELECT ${dataToBeReturned} FROM ${tableName} WHERE ` + columnToBeSearched + `${category ? ' AND category = $searchCategory ' : ''} ` + `ORDER BY ${columnName} ${order} LIMIT $limit OFFSET $offset`;            
+            let dataCountQuery = `SELECT COUNT(*) AS total_count FROM ${tableName} WHERE ` + columnToBeSearched + `${category ? ' AND category = $searchCategory' : ''}`;
             if (type === 'password') {
                 if (category) {
-                    passwordSearchQueryResult = await dbConnection.run(passwordSearchQuery, { searchCategory: category, searchTitle: `%${searchInput}%`, searchUrl: `%${searchInput}%`, limit: pageSize, offset }, { searchCategory: VARCHAR, searchTitle: VARCHAR, searchUrl: VARCHAR, limit: INTEGER, offset: INTEGER });
-                    searchPasswordCountQueryResult = await dbConnection.run(searchPasswordCountQuery, { searchCategory: category, searchTitle: `%${searchInput}%`, searchUrl: `%${searchInput}%` }, { searchCategory: VARCHAR, searchTitle: VARCHAR, searchUrl: VARCHAR });
+                    searchQueryResult = await dbConnection.run(searchQuery, { searchCategory: category, searchTitle: `%${searchInput}%`, searchUrl: `%${searchInput}%`, limit: pageSize, offset }, { searchCategory: VARCHAR, searchTitle: VARCHAR, searchUrl: VARCHAR, limit: INTEGER, offset: INTEGER });
+                    dataCountQueryResult = await dbConnection.run(dataCountQuery, { searchCategory: category, searchTitle: `%${searchInput}%`, searchUrl: `%${searchInput}%` }, { searchCategory: VARCHAR, searchTitle: VARCHAR, searchUrl: VARCHAR });
                 } else {
-                    passwordSearchQueryResult = await dbConnection.run(passwordSearchQuery, { searchTitle: `%${searchInput}%`, searchUrl: `%${searchInput}%`, limit: pageSize, offset }, { searchTitle: VARCHAR, searchUrl: VARCHAR, limit: INTEGER, offset: INTEGER });
-                    searchPasswordCountQueryResult = await dbConnection.run(searchPasswordCountQuery, { searchTitle: `%${searchInput}%`, searchUrl: `%${searchInput}%` }, { searchTitle: VARCHAR, searchUrl: VARCHAR });
+                    searchQueryResult = await dbConnection.run(searchQuery, { searchTitle: `%${searchInput}%`, searchUrl: `%${searchInput}%`, limit: pageSize, offset }, { searchTitle: VARCHAR, searchUrl: VARCHAR, limit: INTEGER, offset: INTEGER });
+                    dataCountQueryResult = await dbConnection.run(dataCountQuery, { searchTitle: `%${searchInput}%`, searchUrl: `%${searchInput}%` }, { searchTitle: VARCHAR, searchUrl: VARCHAR });
                 }
-                const queryResultInJson = await passwordSearchQueryResult.getRowObjectsJson();
-                const totalMatchingPasswords = await searchPasswordCountQueryResult.getRowObjectsJson();
+                const queryResultInJson = await searchQueryResult.getRowObjectsJson();
+                const totalMatchingPasswords = await dataCountQueryResult.getRowObjectsJson();
                 return {
                     rows: queryResultInJson,
                     totalEntries: totalMatchingPasswords[0]['total_count'],
@@ -766,14 +767,14 @@ async function searchData(
             }
             if (type === 'text') {
                 if (category) {
-                    passwordSearchQueryResult = await dbConnection.run(passwordSearchQuery, { searchCategory: category, searchTitle: `%${searchInput}%`, limit: pageSize, offset }, { searchCategory: VARCHAR, searchTitle: VARCHAR, limit: INTEGER, offset: INTEGER });
-                    searchPasswordCountQueryResult = await dbConnection.run(searchPasswordCountQuery, { searchCategory: category, searchTitle: `%${searchInput}%` }, { searchCategory: VARCHAR, searchTitle: VARCHAR });
+                    searchQueryResult = await dbConnection.run(searchQuery, { searchCategory: category, searchTitle: `%${searchInput}%`, limit: pageSize, offset }, { searchCategory: VARCHAR, searchTitle: VARCHAR, limit: INTEGER, offset: INTEGER });
+                    dataCountQueryResult = await dbConnection.run(dataCountQuery, { searchCategory: category, searchTitle: `%${searchInput}%` }, { searchCategory: VARCHAR, searchTitle: VARCHAR });
                 } else {
-                    passwordSearchQueryResult = await dbConnection.run(passwordSearchQuery, { searchTitle: `%${searchInput}%`, limit: pageSize, offset }, { searchTitle: VARCHAR, limit: INTEGER, offset: INTEGER });
-                    searchPasswordCountQueryResult = await dbConnection.run(searchPasswordCountQuery, { searchTitle: `%${searchInput}%` }, { searchTitle: VARCHAR });
+                    searchQueryResult = await dbConnection.run(searchQuery, { searchTitle: `%${searchInput}%`, limit: pageSize, offset }, { searchTitle: VARCHAR, limit: INTEGER, offset: INTEGER });
+                    dataCountQueryResult = await dbConnection.run(dataCountQuery, { searchTitle: `%${searchInput}%` }, { searchTitle: VARCHAR });
                 }
-                const queryResultInJson = await passwordSearchQueryResult.getRowObjectsJson();
-                const totalMatchingPasswords = await searchPasswordCountQueryResult.getRowObjectsJson();
+                const queryResultInJson = await searchQueryResult.getRowObjectsJson();
+                const totalMatchingPasswords = await dataCountQueryResult.getRowObjectsJson();
                 return {
                     rows: queryResultInJson,
                     totalEntries: totalMatchingPasswords[0]['total_count'],

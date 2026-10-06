@@ -1,0 +1,34 @@
+<div class="relative inline-flex" (mouseenter)="isVisible.set(true)"
+    (mouseleave)="isVisible.set(false)">
+    <ng-content />
+    @if (isVisible()) {
+    <div role="tooltip"
+        class="absolute z-50 flex items-center justify-center pointer-events-none whitespace-nowrap rounded-lg p-2 text-sm font-medium text-white shadow-xl"
+        [class.bg-slate-900/80]="backgroundClass() === 'bg-slate-900'"
+        [class.bg-blue-600/80]="backgroundClass() === 'bg-blue-600'"
+        [class.bg-green-600/80]="backgroundClass() === 'bg-green-600'"
+        [class.bg-red-600/80]="backgroundClass() === 'bg-red-600'"
+        [class.bg-amber-500/80]="backgroundClass() === 'bg-amber-500'"
+        [class.bottom-full]="isTop()" [class.left-1/2]="isTop() || isBottom()"
+        [class.-translate-x-1/2]="isTop() || isBottom()" [class.mb-2]="isTop()"
+        [class.top-full]="isBottom()" [class.mt-2]="isBottom()"
+        [class.right-full]="isLeft()" [class.top-1/2]="isLeft() || isRight()"
+        [class.-translate-y-1/2]="isLeft() || isRight()" [class.mr-2]="isLeft()"
+        [class.left-full]="isRight()" [class.ml-2]="isRight()">
+        <span class="text-[10px]">{{ text() }}</span>
+        <div class="absolute h-2.5 w-2.5 rotate-45"
+            [class.bg-slate-900/80]="backgroundClass() === 'bg-slate-900'"
+            [class.bg-blue-600/80]="backgroundClass() === 'bg-blue-600'"
+            [class.bg-green-600/80]="backgroundClass() === 'bg-green-600'"
+            [class.bg-red-600/80]="backgroundClass() === 'bg-red-600'"
+            [class.bg-amber-500/80]="backgroundClass() === 'bg-amber-500'"
+            [class.top-full]="isTop()" [class.left-1/2]="isTop() || isBottom()"
+            [class.-translate-x-1/2]="isTop() || isBottom()"
+            [class.-mt-1]="isTop()" [class.bottom-full]="isBottom()"
+            [class.-mb-1]="isBottom()" [class.left-full]="isLeft()"
+            [class.-ml-1]="isLeft()" [class.top-1/2]="isLeft() || isRight()"
+            [class.-translate-y-1/2]="isLeft() || isRight()"
+            [class.right-full]="isRight()" [class.-mr-1]="isRight()"></div>
+    </div>
+    }
+</div>

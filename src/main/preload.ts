@@ -11,7 +11,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   deleteData: (id: string, type: DataType) => ipcRenderer.invoke("deleteData", id, type),
   editData: (updatedData: PasswordDetails | TextDetails) => ipcRenderer.invoke("editData", updatedData),
   decryptSensitiveData: (id: string, type: DataType) => ipcRenderer.invoke("decryptSensitiveData", id, type),
-  fetchData: (type: DataType, pageNum: number, pageSize: number) => ipcRenderer.invoke("fetchData", type, pageNum, pageSize),
+  fetchData: (type: DataType, pageNum: number, pageSize: number, sortingOrder: SortingOrder) => ipcRenderer.invoke("fetchData", type, pageNum, pageSize, sortingOrder),
   searchData: (category: Categories, searchInput: string, type: DataType, pageNum: number, pageSize: number, sortingOrder: SortingOrder): Promise<ResponsePayload> => ipcRenderer.invoke("searchData", category, searchInput, type, pageNum, pageSize, sortingOrder),
   getUserSettingsData: (): Promise<{ success: boolean; data: any; }> => ipcRenderer.invoke("getUserSettingsData"),
   setUserSettingsData: (settingsData: string): Promise<{ success: boolean; message: string;}> => ipcRenderer.invoke("setUserSettingsData", settingsData),

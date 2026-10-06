@@ -22,10 +22,10 @@ export class GlobalService {
   // vault item search function data
   searchInput = signal<string>('');
   selectedCategory = signal<Categories>('');
-  selectedSortingOrder = signal<SortingOrder>('date_asc');
+  selectedSortingOrder = signal<SortingOrder>('date_desc');
 
   async getVaultData() {
-    const vaultData = await window.electronAPI?.fetchData(this.selectedDataType(), this.currentPageNum(), this.pageSize());
+    const vaultData = await window.electronAPI?.fetchData(this.selectedDataType(), this.currentPageNum(), this.pageSize(), this.selectedSortingOrder());
     this.totalEntries.set(vaultData?.totalEntries ?? 0);
     return vaultData;
   }

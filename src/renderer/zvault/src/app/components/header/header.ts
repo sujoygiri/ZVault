@@ -1,7 +1,6 @@
-import { Component, input, model, output, signal } from '@angular/core';
-import { ThemeService } from '../../services/theme.service';
+import { Component, input, model, output } from '@angular/core';
 import { GlobalService } from '../../services/global.service';
-import { Categories, DataType, PasswordDetails, ResponsePayload, SortingOrder, TextDetails } from '@zvault/shared-api';
+import { Categories, PasswordDetails, ResponsePayload, SortingOrder, TextDetails } from '@zvault/shared-api';
 
 @Component({
   selector: 'app-header',
@@ -24,11 +23,10 @@ export class Header {
   timeoutId: any;
 
   constructor (
-    private globalService: GlobalService,
-    protected themeService: ThemeService
+    private globalService: GlobalService
   ) { }
 
-  updateSearchResult(searchResponse: ResponsePayload) {
+  setSearchResult(searchResponse: ResponsePayload) {
     if(this.globalService.selectedDataType() === 'password') {
       this.vaultItemPasswords.set(searchResponse.rows as PasswordDetails[]);
     }
@@ -43,7 +41,7 @@ export class Header {
     if (this.timeoutId) clearTimeout(this.timeoutId);
     this.timeoutId = setTimeout(async () => {
       const searchResponse = await this.globalService.handleDataSearch();
-      if(searchResponse) this.updateSearchResult(searchResponse);
+      if(searchResponse) this.setSearchResult(searchResponse);
     }, 500);
   }
 
@@ -51,13 +49,13 @@ export class Header {
     const targetElement = (event.target) as HTMLSelectElement;
     this.globalService.selectedCategory.set(targetElement.value as Categories);
     const searchResponse = await this.globalService.handleDataSearch();
-    if (searchResponse) this.updateSearchResult(searchResponse);
+    if (searchResponse) this.setSearchResult(searchResponse);
   }
 
   async handleDataSorting(event: Event) {
     const targetElement = (event.target) as HTMLSelectElement;
     this.globalService.selectedSortingOrder.set(targetElement.value as SortingOrder);
     const searchResponse = await this.globalService.handleDataSearch();
-    if (searchResponse) this.updateSearchResult(searchResponse);
+    if (searchResponse) this.setSearchResult(searchResponse);
   }
 }

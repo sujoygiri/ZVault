@@ -4,53 +4,71 @@
     <!-- App Logo -->
     <button
       class="w-10 h-10 cursor-pointer bg-[#2563EB] text-white flex items-center justify-center rounded-xl shadow-md shadow-blue-200 dark:shadow-none transition hover:bg-blue-700">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 -960 960 960" fill="currentColor">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+        viewBox="0 -960 960 960" fill="currentColor">
         <path
           d="M420-360h120l-23-129q20-10 31.5-29t11.5-42q0-33-23.5-56.5T480-640q-33 0-56.5 23.5T400-560q0 23 11.5 42t31.5 29l-23 129Zm60 280q-139-35-229.5-159.5T160-516v-244l320-120 320 120v244q0 152-90.5 276.5T480-80Zm0-84q104-33 172-132t68-220v-189l-240-90-240 90v189q0 121 68 220t172 132Zm0-316Z" />
       </svg>
     </button>
 
     <!-- Grid Dashboard Link -->
-    <button
-      class="w-10 h-10 cursor-pointer flex items-center justify-center rounded-xl transition"
-      [ngClass]="currentMenuItem() === 'passwords' ? 'text-blue-500 bg-blue-50 dark:bg-blue-950/40' : 'text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'"
-      (click)="handleMenuItemSelect('passwords')">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 -960 960 960" fill="currentColor">
-        <path
-          d="M80-200v-80h800v80H80Zm46-242-52-30 34-60H40v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Zm320 0-52-30 34-60h-68v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Zm320 0-52-30 34-60h-68v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Z" />
-      </svg>
-    </button>
+    <app-tool-tip [text]="'Password'" [position]="'right'"
+      [backgroundClass]="'bg-blue-600'">
+      <button
+        class="w-10 h-10 cursor-pointer flex items-center justify-center rounded-xl transition"
+        [ngClass]="currentMenuItem() === 'passwords' ? 'text-blue-500 bg-blue-50 dark:bg-blue-950/40' : 'text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'"
+        (click)="handleMenuItemSelect('passwords')">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+          viewBox="0 -960 960 960" fill="currentColor">
+          <path
+            d="M80-200v-80h800v80H80Zm46-242-52-30 34-60H40v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Zm320 0-52-30 34-60h-68v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Zm320 0-52-30 34-60h-68v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Z" />
+        </svg>
+      </button>
+    </app-tool-tip>
 
     <!-- Security Shield Link -->
-    <button
-      class="w-10 h-10 cursor-pointer flex items-center justify-center rounded-xl transition"
-      [ngClass]="currentMenuItem() === 'texts' ? 'text-blue-500 bg-blue-50 dark:bg-blue-950/40' : 'text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'"
-      (click)="handleMenuItemSelect('texts')">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 -960 960 960" fill="currentColor"><path d="M200-280h560v-80H200v80Zm0-160h560v-80H200v80Zm0-160h400v-80H200v80Zm-40 440q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm0 0v-480 480Z"/></svg>
-    </button>
+    <app-tool-tip [text]="'Text'" [position]="'right'"
+      [backgroundClass]="'bg-blue-600'">
+      <button
+        class="w-10 h-10 cursor-pointer flex items-center justify-center rounded-xl transition"
+        [ngClass]="currentMenuItem() === 'texts' ? 'text-blue-500 bg-blue-50 dark:bg-blue-950/40' : 'text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'"
+        (click)="handleMenuItemSelect('texts')">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5"
+          viewBox="0 -960 960 960" fill="currentColor">
+          <path
+            d="M200-280h560v-80H200v80Zm0-160h560v-80H200v80Zm0-160h400v-80H200v80Zm-40 440q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm0 0v-480 480Z" />
+        </svg>
+      </button>
+    </app-tool-tip>
   </div>
 
   <div class="flex flex-col items-center gap-6 w-full">
     <!-- Settings Link -->
-    <button
-      class="w-10 h-10 cursor-pointer flex items-center justify-center rounded-xl transition"
-      [ngClass]="currentMenuItem() === 'settings' ? 'text-blue-500 bg-blue-50 dark:bg-blue-950/40' : 'text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'"
-      (click)="handleMenuItemSelect('settings')">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-        viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round"
-          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-        <circle cx="12" cy="12" r="3" />
-      </svg>
-    </button>
+    <app-tool-tip [text]="'Setting'" [position]="'right'"
+      [backgroundClass]="'bg-blue-600'">
+      <button
+        class="w-10 h-10 cursor-pointer flex items-center justify-center rounded-xl transition"
+        [ngClass]="currentMenuItem() === 'settings' ? 'text-blue-500 bg-blue-50 dark:bg-blue-950/40' : 'text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'"
+        (click)="handleMenuItemSelect('settings')">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+          viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      </button>
+    </app-tool-tip>
     <!-- Logout -->
-    <button
-      class="w-10 h-10 cursor-pointer text-red-400 flex items-center justify-center rounded-xl transition hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-        viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round"
-          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-      </svg>
-    </button>
+    <app-tool-tip [text]="'Lock Vault'" [position]="'right'"
+      [backgroundClass]="'bg-red-600'">
+      <button
+        class="w-10 h-10 cursor-pointer text-red-400 flex items-center justify-center rounded-xl transition hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+          viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        </svg>
+      </button>
+    </app-tool-tip>
   </div>
 </aside>
