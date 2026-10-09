@@ -31,6 +31,7 @@ export interface UserSettings {
 export type Categories = 'General' | 'Work' | 'Personal' | 'Finance' | 'Social' | 'Entertainment' | '';
 export type ModalName = "backup_action" | "backup_list" | null;
 export type SortingOrder = "name_asc" | "name_desc" | "date_asc" | "date_desc";
+export type RestoreMode = 'merge' | 'replace';
 
 export interface IElectronAPI {
     onSystemThemeChange: (callback: (value: { isDarkMode: boolean; }) => void) => Electron.IpcRenderer,
@@ -47,20 +48,21 @@ export interface IElectronAPI {
     getUserSettingsData: () => Promise<{ success: boolean; data: any; }>,
     setUserSettingsData: (settingsData: string) => Promise<{ success: boolean; message: string; }>,
     exportVaultLocally: () => Promise<{ success: boolean, message: string; }>,
+    importLocalBackup: (filePath: string, masterPassword: string, mode: RestoreMode) => Promise<{ success: boolean, message: string; }>,
+    chooseLocalFile: () => Promise<ApiResponse>,
     copyToClipBoard: (data: string) => Promise<ApiResponse | undefined>,
-
+    
     openUrl: (url: string) => void,
-
+    
     mergeGoogleCloudBackupFile: (backFileId: string, backFilename: string, masterPassword: string) => Promise<any>,
     connectToCloud: (cloudDrive: CloudDrive) => Promise<{ isBackupPresent: boolean; data: drive_v3.Schema$File[] | null; message: string; } | undefined>,
-
+    
     cloudSyncPasswordError: (callback: (errMessage: string) => void) => Electron.IpcRenderer,
     cloudSyncPasswordSubmit: (password: string) => void,
     cloudSyncPasswordCancel: () => void,
-    importCloudBackup: (masterPassword: string) => Promise<any>,
     checkExistingBackup: () => Promise<{ isBackupPresent: boolean, data: drive_v3.Schema$File[], message: string; }>,
+    importCloudBackup: (masterPassword: string) => Promise<any>,
     checkTokenValidity: () => Promise<{ isTokenValid: boolean, message: string; }>,
-    openLocalBackup: () => Promise<{ success: boolean, message: string; }>,
     backupToDrive: () => Promise<{ success: boolean, message: string; }>,
     openCloudBackup: (backupFileId: string, backupFileName: string) => Promise<{ success: boolean, message: string; }>;
 }

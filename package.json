@@ -53,12 +53,16 @@
     "@duckdb/node-api": "^1.4.3-r.2",
     "@node-rs/argon2": "^2.0.2",
     "adm-zip": "^0.5.16",
-    "googleapis": "^180.0.0"
+    "googleapis": "^180.0.0",
+    "yauzl": "^3.4.0",
+    "yazl": "^3.3.1"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.2",
     "@types/adm-zip": "^0.5.7",
     "@types/node": "^25.0.3",
+    "@types/yauzl": "^3.4.0",
+    "@types/yazl": "^3.3.1",
     "concurrently": "^9.2.1",
     "electron": "^39.2.7",
     "electron-builder": "^26.0.12",

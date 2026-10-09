@@ -1,6 +1,6 @@
 import { Component, effect, input, OnInit, output, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { DataType, PasswordDetails, TextDetails } from '@zvault/shared-api';
+import { PasswordDetails, TextDetails } from '@zvault/shared-api';
 import { GlobalService } from '../../../services/global.service';
 
 
@@ -11,6 +11,9 @@ import { GlobalService } from '../../../services/global.service';
   styleUrl: './add-data.css',
 })
 export class AddData implements OnInit {
+
+  currentDataInputLength = signal(0);
+  inputLengthWarning = signal('');
 
   // Inputs / Outputs
   isOpen = input<boolean>(false);
@@ -110,6 +113,13 @@ export class AddData implements OnInit {
       this.resetAndClose();
       this.close.emit();
     }, 200);
+  }
+
+  handleDataInputLimit(event: Event) {
+    const target = event.target as HTMLTextAreaElement;
+    const value = target.value;
+    this.currentDataInputLength.set(value.length);
+    
   }
 
   private resetAndClose(): void {

@@ -14,6 +14,7 @@ import {
 import path from "node:path";
 import os from "node:os";
 import fs from "node:fs";
+import stream from "node:stream";
 import { Buffer } from "node:buffer";
 import crypto, { Encoding } from "node:crypto";
 import {
@@ -26,20 +27,23 @@ import {
 } from "@duckdb/node-api";
 import argon2 from "@node-rs/argon2";
 import { drive_v3, google } from "googleapis";
+import yauzl from "yauzl";
+import { ZipFile } from "yazl";
 import AdmZip from "adm-zip";
-import { 
-    Categories, 
-    CloudDrive, 
-    DataTables, 
-    DataType, 
-    NewPassword, 
-    NewText, 
-    PasswordDetails, 
-    SortingOrder, 
-    TextDetails, 
+import {
+    Categories,
+    CloudDrive,
+    DataTables,
+    DataType,
+    NewPassword,
+    NewText,
+    PasswordDetails,
+    SortingOrder,
+    TextDetails,
     ApiResponse,
     UserSettings,
-    AppActiveState
+    AppActiveState,
+    RestoreMode
 } from "../shared/api.types";
 import { setTimeout } from "node:timers";
 
@@ -90,7 +94,7 @@ const suffixes = [
     "hard", "haunt", "head", "heart", "helm", "high", "hill", "hold", "hollow", "home"
 ];
 
-let userSettingsData:UserSettings;
+let userSettingsData: UserSettings;
 let vaultDEK: Buffer | null = null;
 let dbConnection: DuckDBConnection | null = null;
 let mainWindow: BrowserWindow | null = null;
@@ -119,17 +123,17 @@ function createWindow() {
     });
 
     mainWindow.on("blur", () => {
-        if(windowBlurTimeOutId) clearTimeout(windowBlurTimeOutId);
+        if (windowBlurTimeOutId) clearTimeout(windowBlurTimeOutId);
         windowBlurTimeOutId = setTimeout(() => {
-            mainWindow?.webContents.send("window:state", {state: 'blurred'} as AppActiveState)
+            mainWindow?.webContents.send("window:state", { state: 'blurred' } as AppActiveState);
         }, 30 * 1000);
     });
-    
+
     mainWindow.on("focus", () => {
-        if(windowFocusTimeOutId) clearTimeout(windowFocusTimeOutId);
-        if(windowBlurTimeOutId) clearTimeout(windowBlurTimeOutId);
+        if (windowFocusTimeOutId) clearTimeout(windowFocusTimeOutId);
+        if (windowBlurTimeOutId) clearTimeout(windowBlurTimeOutId);
         windowFocusTimeOutId = setTimeout(() => {
-            mainWindow?.webContents.send("window:state", {state: 'focused'} as AppActiveState)
+            mainWindow?.webContents.send("window:state", { state: 'focused' } as AppActiveState);
         }, 0);
     });
 
@@ -167,10 +171,11 @@ app.whenReady().then(() => {
     ipcMain.handle("getUserSettingsData", getUserSettingsData);
     ipcMain.handle("setUserSettingsData", setUserSettingsData);
     ipcMain.handle("copyToClipBoard", copyToClipBoard);
+    ipcMain.handle("chooseLocalFile", chooseLocalFile);
     // ipcMain.handle("importCloudBackup", importGDriveData);
     // ipcMain.handle("checkExistingBackup", connectToGoogleDrive);
     // ipcMain.handle("checkTokenValidity", checkTokenValidity);
-    ipcMain.handle("openLocalBackup", openLocalBackup);
+    ipcMain.handle("importLocalBackup", importLocalBackup);
     ipcMain.handle("exportVaultLocally", exportVaultLocally);
     // ipcMain.handle("backupToDrive", backupToDrive);
     // ipcMain.handle("openCloudBackup", openCloudBackup);
@@ -188,7 +193,7 @@ app.on("activate", () => {
 });
 
 nativeTheme.on("updated", () => {
-    mainWindow?.webContents.send('onSystemThemeChange', {isDarkMode: nativeTheme.shouldUseDarkColors});
+    mainWindow?.webContents.send('onSystemThemeChange', { isDarkMode: nativeTheme.shouldUseDarkColors });
 });
 
 function vaultExistStatus(): boolean {
@@ -202,14 +207,14 @@ async function copyToClipBoard(
 ): Promise<ApiResponse | undefined> {
     try {
         clipboard.writeText(data);
-        if(copyTimeOutId) clearTimeout(copyTimeOutId);
+        if (copyTimeOutId) clearTimeout(copyTimeOutId);
         copyTimeOutId = setTimeout(() => {
             clipboard.clear();
         }, ((userSettingsData.clipboardClearDelay ?? 20) * 1000));
         return {
             success: true,
             message: "Copied"
-        }
+        };
     } catch (error) {
         await handelError(error, 'Clipboard Action', copyToClipBoard.name, 'Copy failed!');
     }
@@ -218,7 +223,7 @@ async function copyToClipBoard(
 async function openUrl(_event: IpcMainEvent, url: string): Promise<ApiResponse> {
     try {
         await shell.openExternal(url);
-        return {success: true};
+        return { success: true };
     } catch (error) {
         return await handelError(error, 'Open URL', openUrl.name, `Failed to open the URL: ${url}`);
     }
@@ -394,12 +399,12 @@ async function getAppData() {
 
 async function getUserSettingsData(_event: IpcMainInvokeEvent): Promise<ApiResponse> {
     try {
-        if(fs.existsSync(USER_SETTINGS_DATA_PATH)){
-            const rawData = await fs.promises.readFile(USER_SETTINGS_DATA_PATH, {encoding: 'utf8'});
+        if (fs.existsSync(USER_SETTINGS_DATA_PATH)) {
+            const rawData = await fs.promises.readFile(USER_SETTINGS_DATA_PATH, { encoding: 'utf8' });
             userSettingsData = JSON.parse(rawData) as UserSettings;
             return { success: true, data: userSettingsData };
         }
-        return {success: false, data: null};
+        return { success: false, data: null };
     } catch (error) {
         return await handelError(error, 'User Settings', getUserSettingsData.name, 'Settings Data Corrupted. Reset to Defaults!');
     }
@@ -408,8 +413,8 @@ async function getUserSettingsData(_event: IpcMainInvokeEvent): Promise<ApiRespo
 async function setUserSettingsData(_event: IpcMainInvokeEvent, settingsData: string): Promise<ApiResponse> {
     try {
         userSettingsData = JSON.parse(settingsData) as UserSettings;
-        await fs.promises.writeFile(USER_SETTINGS_DATA_PATH, settingsData, {encoding: 'utf8'});
-        return {success: true, message: "Settings saved successfully!"};
+        await fs.promises.writeFile(USER_SETTINGS_DATA_PATH, settingsData, { encoding: 'utf8' });
+        return { success: true, message: "Settings saved successfully!" };
     } catch (error) {
         return await handelError(error, 'Save Settings', setUserSettingsData.name, 'Failed to save settings!');
     }
@@ -693,7 +698,7 @@ async function fetchData(
 ) {
     try {
         let tableName = getDataTableName(type);
-        let {columnName, order} = getSortingColumnAndOrder(sortingOrder);
+        let { columnName, order } = getSortingColumnAndOrder(sortingOrder);
         return await getTableData(tableName, columnName, pageNum, pageSize, order);
     } catch (error) {
         throw new Error("Something went wrong!");
@@ -747,7 +752,7 @@ async function searchData(
                 dataToBeReturned = `id, title, category, is_favorite, last_modified`;
                 columnToBeSearched = `title LIKE $searchTitle`;
             }
-            let searchQuery = `SELECT ${dataToBeReturned} FROM ${tableName} WHERE ` + columnToBeSearched + `${category ? ' AND category = $searchCategory ' : ''} ` + `ORDER BY ${columnName} ${order} LIMIT $limit OFFSET $offset`;            
+            let searchQuery = `SELECT ${dataToBeReturned} FROM ${tableName} WHERE ` + columnToBeSearched + `${category ? ' AND category = $searchCategory ' : ''} ` + `ORDER BY ${columnName} ${order} LIMIT $limit OFFSET $offset`;
             let dataCountQuery = `SELECT COUNT(*) AS total_count FROM ${tableName} WHERE ` + columnToBeSearched + `${category ? ' AND category = $searchCategory' : ''}`;
             if (type === 'password') {
                 if (category) {
@@ -817,7 +822,7 @@ async function connectToGoogleDrive() {
                 return checkExistingBackup(newTokenResponse.accessToken);
             } else {
                 const error = new Error('Connect to Google failed!');
-                await handelError(error, 'Google Connection', connectToGoogleDrive.name, "Failed to connect with Google account")
+                await handelError(error, 'Google Connection', connectToGoogleDrive.name, "Failed to connect with Google account");
             }
         }
     } catch (error: any) {
@@ -835,12 +840,12 @@ async function getNewToken(): Promise<{ success: boolean, accessToken: string | 
         headers: { 'x-zvault-app-token': credential.APP_TOKEN },
         credentials: 'include'
     });
-    
+
     // Ensure the initial fetch didn't fail
     if (!res.ok) throw new Error(`Init failed: ${res.status} ${await res.text()}`);
 
     const { url, sessionId } = await res.json();
-    
+
     await shell.openExternal(url);
     const pollStartTime = Date.now();
 
@@ -1008,12 +1013,12 @@ async function listBackups(drive: drive_v3.Drive, folderId: string): Promise<dri
 async function mergeGoogleCloudBackupFile(_event: IpcMainInvokeEvent, backFileId: string, backFilename: string, masterPassword: string) {
     try {
         const token = await getLocalTokenOrRefreshedToken();
-        if(token.exist && token.accessToken !== null){
+        if (token.exist && token.accessToken !== null) {
             const authClient = new google.auth.OAuth2();
             authClient.setCredentials({ access_token: token.accessToken });
             const drive = google.drive({ version: "v3", auth: authClient });
             const downloadedPath = await downloadBackupFile(drive, backFileId, backFilename);
-            console.log({downloadedPath, masterPassword});
+            console.log({ downloadedPath, masterPassword });
             return downloadedPath;
         } else {
             const error = new Error("Token not found");
@@ -1021,7 +1026,7 @@ async function mergeGoogleCloudBackupFile(_event: IpcMainInvokeEvent, backFileId
         }
     } catch (error) {
         console.log(error, mergeGoogleCloudBackupFile.name);
-        
+
     }
 }
 
@@ -1187,21 +1192,14 @@ async function cleanupOldBackups(drive: drive_v3.Drive, folderId: string, keepLa
 
 async function mergeBackupIntoCurrent(localPath: string, cloudPath: string, dbEncryptionKeyLocal: string, dbEncryptionKeyCloud: string) {
     try {
-        // Attach local database if not present
         if (!dbConnection) {
             const localInstance = await DuckDBInstance.create();
             dbConnection = await localInstance.connect();
             await dbConnection.run(`ATTACH '${localPath}' AS local_db (ENCRYPTION_KEY '${dbEncryptionKeyLocal}', ENCRYPTION_CIPHER 'GCM')`);
         }
-
-        // Attach cloud backup
         await dbConnection.run(
             `ATTACH '${cloudPath}' AS cloud_db (ENCRYPTION_KEY '${dbEncryptionKeyCloud}', ENCRYPTION_CIPHER 'GCM')`
         );
-
-        // ───────────────────────────────────────────────
-        // 3. Get list of tables from the cloud database
-        // ───────────────────────────────────────────────
         const tablesReader = await dbConnection.runAndReadAll(`
             SELECT table_name 
             FROM duckdb_tables() 
@@ -1213,12 +1211,6 @@ async function mergeBackupIntoCurrent(localPath: string, cloudPath: string, dbEn
             console.log('No tables found in cloud backup — nothing to merge.');
             return;
         };
-
-        // ───────────────────────────────────────────────
-        // 4. Merge each table (INSERT OR REPLACE strategy)
-        // ───────────────────────────────────────────────
-        console.log(allTableNames);
-
         for (const table of allTableNames) {
             console.log(`Merging table: ${table}`);
             await dbConnection.run(`
@@ -1226,7 +1218,7 @@ async function mergeBackupIntoCurrent(localPath: string, cloudPath: string, dbEn
                 SELECT * FROM cloud_db.main.${table}
             `);
         };
-        console.log('Merge completed successfully.');
+        return { success: true };
     } catch (error: any) {
         console.error('Merge failed:', error.message || error);
         if (dbConnection) {
@@ -1341,38 +1333,113 @@ async function replaceLocalFileWithCloud(
     }
 }
 
-async function openLocalBackup(): Promise<{ success: boolean, message: string; }> {
+async function createZipFile() {
+
+}
+
+async function unZipFile(zipFilePath: string, extractPath: string) {
+    try {
+        const zipFile = await yauzl.openPromise(zipFilePath, { autoClose: true });
+        for await (const entry of zipFile.eachEntry()) {
+            if (entry.fileName.endsWith("/")) continue;
+            const outputPath = path.join(extractPath, entry.fileName);
+            await fs.promises.mkdir(path.dirname(outputPath), { recursive: true });
+            const readStream = await zipFile.openReadStreamPromise(entry);
+            const writeStream = fs.createWriteStream(outputPath);
+            await stream.promises.pipeline(readStream, writeStream);
+        }
+        return { success: true };
+    } catch (error) {
+        await handelError(error, "Vault un-zip", unZipFile.name, "Error occurred during vault data extraction!");
+    }
+}
+
+async function chooseLocalFile(): Promise<ApiResponse> {
     try {
         const chosenFileArray = dialog.showOpenDialogSync(mainWindow!, {
-            title: "Choose your backup vault file",
+            title: "Choose your backup vault zip file",
             // defaultPath: app.getPath("desktop"),
             properties: ["openFile"],
             filters: [{ name: 'Vault Zip', extensions: ['zip'] }]
         });
         if (Array.isArray(chosenFileArray) && chosenFileArray.length) {
-            const chosenFile = chosenFileArray[0];
-            const VAULT_COPY_PATH = path.join(USER_DATA_PATH, 'vault.zip');
-            await fs.promises.copyFile(chosenFile, VAULT_COPY_PATH);
-            const zip = new AdmZip(VAULT_COPY_PATH);
-            return new Promise((resolve, reject) => {
-                zip.extractAllToAsync(USER_DATA_PATH, true, true, async (error) => {
-                    await fs.promises.unlink(VAULT_COPY_PATH);
-                    resolve({ success: true, message: "Backup Imported Successfully" });
-                    if (error) {
-                        await handelError(error, 'Import Error', openLocalBackup.name, 'Import Failed. Try again!');
-                        reject(error);
-                    }
-                });
-            });
+            return { success: true, message: "File selected", data: chosenFileArray[0] };
         } else {
+            return { success: false, message: "File selection cancelled!" };
+        }
+    } catch (error) {
+        return await handelError(error, "File Select", chooseLocalFile.name, "Something went wrong during file selection");
+    }
+}
+
+async function replaceCurrentVault() {
+
+}
+
+
+async function importLocalBackup(
+    _event: IpcMainInvokeEvent,
+    filePath: string,
+    masterPassword: string,
+    mode: RestoreMode
+): Promise<{ success: boolean, message: string; }> {
+    let tempDirPath = null;
+    try {
+        if (!vaultDEK) {
+            const error = new Error("Vault DEK not found!");
+            return await handelError(error, "Master Password", importLocalBackup.name, "Error Occurred during import!");
+        }
+        if (mode === "merge") {
+            tempDirPath = await fs.promises.mkdtemp(path.join(app.getPath("temp"), 'z-vault-'));
+            const VAULT_COPY_PATH = path.join(tempDirPath, 'vault.zip');
+            await fs.promises.copyFile(filePath, VAULT_COPY_PATH);
+            const unZipResponse = await unZipFile(VAULT_COPY_PATH, tempDirPath);
+            if (unZipResponse && unZipResponse.success) {
+                const backupVaultPath = path.join(tempDirPath, "vault.db");
+                const backUpVaultDataPath = path.join(tempDirPath, "vault.data");
+                const rawData = await fs.promises.readFile(backUpVaultDataPath, { encoding: 'utf8' });
+                const parsedData = JSON.parse(rawData);
+                const backupDekEncryptionKey = await deriveMasterKey(
+                    masterPassword,
+                    Buffer.from(parsedData.dekEncryptionKeySalt, "hex"),
+                );
+                const backupDecryptedDEK = decryptData(
+                    parsedData.IV,
+                    parsedData.TAG,
+                    parsedData.encryptedData,
+                    backupDekEncryptionKey,
+                    "hex",
+                    "hex",
+                );
+                const mergeResponse = await mergeBackupIntoCurrent(VAULT_PATH, backupVaultPath, vaultDEK.toString("hex"), backupDecryptedDEK);
+                if (mergeResponse && mergeResponse.success) {
+                    return { success: true, message: "Backup Vault Merged Successfully With Current Vault" };
+                } else {
+                    const error = new Error("Merge failed!");
+                    return await handelError(error, "Vault Merge", importLocalBackup.name, "Failed to merge backup with current vault!");
+                }
+            } else {
+                const error = new Error("Vault Extraction Failed!");
+                return await handelError(error, "Vault Extraction", importLocalBackup.name, "Failed to extract backup vault data!");
+            }
+        }
+        else {
             return {
                 success: false,
                 message: "File selection cancelled!"
             };
         }
     } catch (error: any) {
-        console.log({ error, where: "@openLocalBackup" });
+        console.log({ error, where: "@importLocalBackup" });
         throw new Error(error.message);
+    } finally {
+        if(tempDirPath) {
+            try {
+                await fs.promises.rm(tempDirPath, {recursive: true, force: true});
+            } catch(error) {
+                // await handelError(error, "Backup cleanup error", importLocalBackup.name);
+            }
+        }
     }
 }
 
@@ -1384,7 +1451,7 @@ async function exportVaultLocally(): Promise<{ success: boolean, message: string
         }
         const folderToExport = dialog.showSaveDialogSync(mainWindow!, {
             title: "Select the folder to export",
-            defaultPath: "z-vault.zip",
+            defaultPath: userSettingsData.vaultName ?? "z-vault.zip",
             filters: [
                 { name: "Vault Zip", extensions: ["zip"] }
             ]

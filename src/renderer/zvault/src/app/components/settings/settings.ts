@@ -2,8 +2,8 @@ import { Component, computed, effect, input, OnInit, output, signal } from '@ang
 import { ToastService } from '../../services/toast.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CloudRestore, RestoreMode } from '../modals/cloud-restore/cloud-restore';
-import { CloudDrive, GoogleDriveFile, UserSettings } from '@zvault/shared-api';
+import { CloudRestore } from '../modals/cloud-restore/cloud-restore';
+import { CloudDrive, GoogleDriveFile, UserSettings, RestoreMode } from '@zvault/shared-api';
 import { GlobalService } from '../../services/global.service';
 import { ThemeService } from '../../services/theme.service';
 import { SettingsService } from '../../services/settings.service';
@@ -27,6 +27,7 @@ export class Settings {
   showRestoreModal = signal(false);
   availableBackups = signal<GoogleDriveFile[]>([]);
   isSaveChangesBtnDisable = signal<boolean>(true);
+  selectedLocalFilePath = signal('');
   timeOutId: any;
 
   constructor (
@@ -76,9 +77,15 @@ export class Settings {
     }
   }
 
-  importLocalBackup() {
+  async importLocalBackup() {
     this.globalService.importType.set('local');
-    this.showRestoreModal.set(true);
+    const fileSelectResponse = await window.electronAPI?.chooseLocalFile();
+    if(fileSelectResponse?.success) {
+      this.selectedLocalFilePath.set(fileSelectResponse.data);
+      this.showRestoreModal.set(true);
+    } else {
+      this.toastService.error("File Select", fileSelectResponse?.message, 3000);
+    }
   }
 
   // --- CLOUD SYNC ACTIONS ---
@@ -114,19 +121,35 @@ export class Settings {
     this.showRestoreModal.set(false);
   }
 
-  async onExecuteRestore(event: { backupId: string | null; backupName: string | null; mode: RestoreMode; password?: string; }) {
-    console.log(`Executing ${event.mode} with backup ID: ${event.backupId}`);
-    this.showRestoreModal.set(false);
+  async handleCloudRestore(backupId: string, backupName: string, mode: RestoreMode, password?: string) {
 
-    if (event.mode === 'replace') {
-      // Trigger DuckDB overwrite logic via IPC
-      // await window.electronAPI.replaceDatabase(event.backupId);
-    } else {
-      // Trigger DuckDB merge logic via IPC
-      console.log(event.backupId, event.backupName);
-      // const response = await window.electronAPI?.mergeGoogleCloudBackupFile(event.backupId, event.backupName, event.password);
-      // console.log({response});
+  }
+
+  async handleLocalRestore(mode: RestoreMode, password?: string) {
+    if(password && this.selectedLocalFilePath().length) {
+      const localImportResponse = await window.electronAPI?.importLocalBackup(this.selectedLocalFilePath(), password, mode);
+      console.log(localImportResponse);
     }
+  }
+
+  async onExecuteRestore(event: { backupId: string | null; backupName: string | null; mode: RestoreMode; password?: string; }) {
+    this.showRestoreModal.set(false);
+    if(event.backupId && event.backupName) {
+      console.log(`Executing ${event.mode} with backup ID: ${event.backupId}`);
+      console.log('cloud');
+    } else {
+      await this.handleLocalRestore(event.mode, event.password)
+    }
+
+    // if (event.mode === 'replace') {
+    //   // Trigger DuckDB overwrite logic via IPC
+    //   // await window.electronAPI.replaceDatabase(event.backupId);
+    // } else {
+    //   // Trigger DuckDB merge logic via IPC
+    //   console.log(event.backupId, event.backupName);
+    //   // const response = await window.electronAPI?.mergeGoogleCloudBackupFile(event.backupId, event.backupName, event.password);
+    //   // console.log({response});
+    // }
   }
 
   handleThemeChange(theme: 'system' | 'dark' | 'light') {   

@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, input, output, signal } from '@angular/core';
-import { GoogleDriveFile } from '@zvault/shared-api';
+import { GoogleDriveFile, RestoreMode } from '@zvault/shared-api';
 import { GlobalService } from '../../../services/global.service';
 
-export type RestoreMode = 'merge' | 'replace';
+
 
 @Component({
   selector: 'app-cloud-restore',
