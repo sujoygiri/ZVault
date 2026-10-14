@@ -7,6 +7,7 @@ import { ResponsePayload } from '@zvault/shared-api';
 import { Toasts } from './components/toasts/toasts';
 import { ThemeService } from './services/theme.service';
 import { SettingsService } from './services/settings.service';
+import { GlobalService } from './services/global.service';
 
 @Component({
   selector: 'app-root',
@@ -24,10 +25,10 @@ export class App implements OnInit {
 
   isLoading = signal<boolean>(false);
   isVaultExist = signal<boolean>(false);
-  showAuthForm = signal<boolean>(true);
   vaultData = signal<ResponsePayload | null>(null);
 
   constructor(
+    protected globalService: GlobalService,
     private themeService: ThemeService, 
     private settingsService: SettingsService
   ) {
@@ -58,7 +59,7 @@ export class App implements OnInit {
   }
 
   receivedVaultData(data: ResponsePayload) {
-    this.showAuthForm.set(false);
+    this.globalService.showAuthForm.set(false);
     this.vaultData.set(data);
   }
 

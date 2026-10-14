@@ -97,6 +97,7 @@ const suffixes = [
 let userSettingsData: UserSettings;
 let vaultDEK: Buffer | null = null;
 let dbConnection: DuckDBConnection | null = null;
+let dbInstance: DuckDBInstance | null = null;
 let mainWindow: BrowserWindow | null = null;
 let copyTimeOutId: any;
 let windowBlurTimeOutId: any;
@@ -122,20 +123,20 @@ function createWindow() {
         return { action: "deny" };
     });
 
-    mainWindow.on("blur", () => {
-        if (windowBlurTimeOutId) clearTimeout(windowBlurTimeOutId);
-        windowBlurTimeOutId = setTimeout(() => {
-            mainWindow?.webContents.send("window:state", { state: 'blurred' } as AppActiveState);
-        }, 30 * 1000);
-    });
+    // mainWindow.on("blur", () => {
+    //     if (windowBlurTimeOutId) clearTimeout(windowBlurTimeOutId);
+    //     windowBlurTimeOutId = setTimeout(() => {
+    //         mainWindow?.webContents.send("window:state", { state: 'blurred' } as AppActiveState);
+    //     }, 30 * 1000);
+    // });
 
-    mainWindow.on("focus", () => {
-        if (windowFocusTimeOutId) clearTimeout(windowFocusTimeOutId);
-        if (windowBlurTimeOutId) clearTimeout(windowBlurTimeOutId);
-        windowFocusTimeOutId = setTimeout(() => {
-            mainWindow?.webContents.send("window:state", { state: 'focused' } as AppActiveState);
-        }, 0);
-    });
+    // mainWindow.on("focus", () => {
+    //     if (windowFocusTimeOutId) clearTimeout(windowFocusTimeOutId);
+    //     if (windowBlurTimeOutId) clearTimeout(windowBlurTimeOutId);
+    //     windowFocusTimeOutId = setTimeout(() => {
+    //         mainWindow?.webContents.send("window:state", { state: 'focused' } as AppActiveState);
+    //     }, 0);
+    // });
 
     if (app.isPackaged) {
         // In packaged app, files are next to the executable
@@ -177,6 +178,7 @@ app.whenReady().then(() => {
     // ipcMain.handle("checkTokenValidity", checkTokenValidity);
     ipcMain.handle("importLocalBackup", importLocalBackup);
     ipcMain.handle("exportVaultLocally", exportVaultLocally);
+    ipcMain.handle("deleteVault", deleteVault);
     // ipcMain.handle("backupToDrive", backupToDrive);
     // ipcMain.handle("openCloudBackup", openCloudBackup);
     ipcMain.on("openUrl", openUrl);
@@ -231,7 +233,7 @@ async function openUrl(_event: IpcMainEvent, url: string): Promise<ApiResponse> 
 
 async function initializeDbConnection(dbEncryptionKey: string) {
     try {
-        const dbInstance = await DuckDBInstance.create();
+        dbInstance = await DuckDBInstance.create();
         dbConnection = await dbInstance.connect();
         // await dbConnection.run(`INSTALL 'C:/Users/SG0927/Downloads/httpfs.duckdb_extension'`);
         // await dbConnection.run(`LOAD httpfs`);
@@ -467,7 +469,7 @@ async function unlockVault(_event: IpcMainInvokeEvent, password: string) {
         );
         vaultDEK = Buffer.from(decryptedDEK, "hex");
         if (!dbConnection) {
-            await initializeDbConnection(vaultDEK.toString("hex"));
+            await initializeDbConnection(decryptedDEK);
         }
         return { success: true, message: 'Authentication successful' };
     } catch (error) {
@@ -1372,72 +1374,57 @@ async function chooseLocalFile(): Promise<ApiResponse> {
     }
 }
 
-async function replaceCurrentVault() {
-
-}
-
-
 async function importLocalBackup(
     _event: IpcMainInvokeEvent,
     filePath: string,
-    masterPassword: string,
-    mode: RestoreMode
-): Promise<{ success: boolean, message: string; }> {
+    masterPassword: string
+): Promise<ApiResponse | undefined> {
     let tempDirPath = null;
     try {
-        if (!vaultDEK) {
-            const error = new Error("Vault DEK not found!");
-            return await handelError(error, "Master Password", importLocalBackup.name, "Error Occurred during import!");
-        }
-        if (mode === "merge") {
-            tempDirPath = await fs.promises.mkdtemp(path.join(app.getPath("temp"), 'z-vault-'));
-            const VAULT_COPY_PATH = path.join(tempDirPath, 'vault.zip');
-            await fs.promises.copyFile(filePath, VAULT_COPY_PATH);
-            const unZipResponse = await unZipFile(VAULT_COPY_PATH, tempDirPath);
-            if (unZipResponse && unZipResponse.success) {
-                const backupVaultPath = path.join(tempDirPath, "vault.db");
-                const backUpVaultDataPath = path.join(tempDirPath, "vault.data");
-                const rawData = await fs.promises.readFile(backUpVaultDataPath, { encoding: 'utf8' });
-                const parsedData = JSON.parse(rawData);
-                const backupDekEncryptionKey = await deriveMasterKey(
-                    masterPassword,
-                    Buffer.from(parsedData.dekEncryptionKeySalt, "hex"),
-                );
-                const backupDecryptedDEK = decryptData(
-                    parsedData.IV,
-                    parsedData.TAG,
-                    parsedData.encryptedData,
-                    backupDekEncryptionKey,
-                    "hex",
-                    "hex",
-                );
-                const mergeResponse = await mergeBackupIntoCurrent(VAULT_PATH, backupVaultPath, vaultDEK.toString("hex"), backupDecryptedDEK);
-                if (mergeResponse && mergeResponse.success) {
-                    return { success: true, message: "Backup Vault Merged Successfully With Current Vault" };
-                } else {
-                    const error = new Error("Merge failed!");
-                    return await handelError(error, "Vault Merge", importLocalBackup.name, "Failed to merge backup with current vault!");
-                }
-            } else {
-                const error = new Error("Vault Extraction Failed!");
-                return await handelError(error, "Vault Extraction", importLocalBackup.name, "Failed to extract backup vault data!");
+        tempDirPath = await fs.promises.mkdtemp(path.join(app.getPath("temp"), 'z-vault-temp'));
+        const VAULT_COPY_PATH = path.join(tempDirPath, 'vault.zip');
+        await fs.promises.copyFile(filePath, VAULT_COPY_PATH);
+        const unZipResponse = await unZipFile(VAULT_COPY_PATH, USER_DATA_PATH);
+        if (unZipResponse && unZipResponse.success) {
+            const backUpVaultDataPath = path.join(USER_DATA_PATH, "vault.data");
+            const rawData = await fs.promises.readFile(backUpVaultDataPath, { encoding: 'utf8' });
+            const parsedData = JSON.parse(rawData);
+            const backupDekEncryptionKey = await deriveMasterKey(
+                masterPassword,
+                Buffer.from(parsedData.dekEncryptionKeySalt, "hex"),
+            );
+            const backupDecryptedDEK = decryptData(
+                parsedData.IV,
+                parsedData.TAG,
+                parsedData.encryptedData,
+                backupDekEncryptionKey,
+                "hex",
+                "hex",
+            );
+            vaultDEK = Buffer.from(backupDecryptedDEK, 'hex');
+            if (!dbConnection) {
+                await initializeDbConnection(backupDecryptedDEK);
             }
-        }
-        else {
-            return {
-                success: false,
-                message: "File selection cancelled!"
-            };
+            return { success: true, message: "Vault restored successfully!" };
+        } else {
+            const error = new Error("Vault Extraction Failed!");
+            return await handelError(error, "Vault Extraction", importLocalBackup.name, "Failed to extract backup vault data!");
         }
     } catch (error: any) {
         console.log({ error, where: "@importLocalBackup" });
-        throw new Error(error.message);
+        if (fs.existsSync(VAULT_PATH)) {
+            await fs.promises.unlink(VAULT_PATH);
+        }
+        if (fs.existsSync(VAULT_DATA_PATH)) {
+            await fs.promises.unlink(VAULT_DATA_PATH);
+        }
+        await handelError(error, "Import", importLocalBackup.name, "Something went wrong during Vault import!");
     } finally {
-        if(tempDirPath) {
+        if (tempDirPath) {
             try {
-                await fs.promises.rm(tempDirPath, {recursive: true, force: true});
-            } catch(error) {
-                // await handelError(error, "Backup cleanup error", importLocalBackup.name);
+                await fs.promises.rm(tempDirPath, { recursive: true, force: true });
+            } catch (error) {
+                console.log({ error, where: "@importLocalBackup finally block" });
             }
         }
     }
@@ -1465,6 +1452,7 @@ async function exportVaultLocally(): Promise<{ success: boolean, message: string
         const zip = new AdmZip();
         zip.addLocalFile(VAULT_PATH);
         zip.addLocalFile(VAULT_DATA_PATH);
+        zip.addLocalFile(USER_SETTINGS_DATA_PATH);
         const exportZipResponse = await zip.writeZipPromise(folderToExport, {
             overwrite: true
         });
@@ -1483,6 +1471,32 @@ async function exportVaultLocally(): Promise<{ success: boolean, message: string
     } catch (error: any) {
         console.log({ error, where: "@exportVaultLocally" });
         throw new Error(error?.message);
+    }
+}
+
+async function deleteVault(_event: IpcMainInvokeEvent): Promise<ApiResponse> {
+    try {
+        if (dbConnection) {
+            dbConnection.closeSync();
+            dbConnection = null;
+        }
+        if (dbInstance) {
+            dbInstance.closeSync();
+            dbInstance = null;
+        }
+        if (vaultDEK) vaultDEK = null;
+        if (fs.existsSync(VAULT_PATH)) {
+            await fs.promises.unlink(VAULT_PATH);
+        }
+        if (fs.existsSync(VAULT_DATA_PATH)) {
+            await fs.promises.unlink(VAULT_DATA_PATH);
+        }
+        if (fs.existsSync(USER_SETTINGS_DATA_PATH)) {
+            await fs.promises.unlink(USER_SETTINGS_DATA_PATH);
+        }
+        return { success: true, message: 'Vault Deleted Successfully' };
+    } catch (error) {
+        return await handelError(error, 'Vault Delete', deleteVault.name, 'Error occurred during Vault Delete!');
     }
 }
 

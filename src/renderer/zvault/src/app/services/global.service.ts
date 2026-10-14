@@ -10,6 +10,7 @@ export type ImportType = 'initial' | 'local' | 'cloud';
 export class GlobalService {
 
   importType = signal<ImportType>('initial');
+  showAuthForm = signal<boolean>(true);
   
   // pagination related data
   currentPageNum = signal<number>(1);

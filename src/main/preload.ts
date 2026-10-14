@@ -18,11 +18,11 @@ contextBridge.exposeInMainWorld("electronAPI", {
   exportVaultLocally: () => ipcRenderer.invoke("exportVaultLocally"),
   importLocalBackup: (
     filePath: string,
-    masterPassword: string,
-    mode: RestoreMode
-  ) => ipcRenderer.invoke("importLocalBackup", filePath, masterPassword, mode),
+    masterPassword: string
+  ) => ipcRenderer.invoke("importLocalBackup", filePath, masterPassword),
   chooseLocalFile: (): Promise<ApiResponse> => ipcRenderer.invoke("chooseLocalFile"),
   copyToClipBoard: (data: string): Promise<ApiResponse | undefined> => ipcRenderer.invoke("copyToClipBoard", data),
+  deleteVault: (): Promise<ApiResponse> => ipcRenderer.invoke("deleteVault"),
 
   openUrl: (url: string) => ipcRenderer.send("openUrl", url),
 

@@ -8,6 +8,10 @@ export class SettingsService {
   defaultSettingsValue: UserSettings = {
     vaultName: 'Personal Master Vault',
     theme: 'dark',
+    requirePasswordOnStartup: false,
+    launchOnStartup: false,
+    minimizeToTrayOnClose: true,
+    compactCardView: false,
     clipboardClearDelay: 30,
     maskSensitiveData: true,
     autoLockDelay: 5,

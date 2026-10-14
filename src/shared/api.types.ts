@@ -13,6 +13,10 @@ export interface UserSettings {
     theme: 'system' | 'dark' | 'light';
     clipboardClearDelay: number; // in seconds
     maskSensitiveData: boolean;
+    requirePasswordOnStartup: boolean;
+    launchOnStartup: boolean;
+    minimizeToTrayOnClose: boolean;
+    compactCardView: boolean;
 
     // Security
     autoLockDelay: number; // in minutes (0 = immediately)
@@ -48,9 +52,10 @@ export interface IElectronAPI {
     getUserSettingsData: () => Promise<{ success: boolean; data: any; }>,
     setUserSettingsData: (settingsData: string) => Promise<{ success: boolean; message: string; }>,
     exportVaultLocally: () => Promise<{ success: boolean, message: string; }>,
-    importLocalBackup: (filePath: string, masterPassword: string, mode: RestoreMode) => Promise<{ success: boolean, message: string; }>,
+    importLocalBackup: (filePath: string, masterPassword: string) => Promise<{ success: boolean, message: string; }>,
     chooseLocalFile: () => Promise<ApiResponse>,
     copyToClipBoard: (data: string) => Promise<ApiResponse | undefined>,
+    deleteVault: () => Promise<ApiResponse>,
     
     openUrl: (url: string) => void,
     

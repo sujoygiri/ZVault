@@ -7,6 +7,7 @@ import { CloudDrive, GoogleDriveFile, UserSettings, RestoreMode } from '@zvault/
 import { GlobalService } from '../../services/global.service';
 import { ThemeService } from '../../services/theme.service';
 import { SettingsService } from '../../services/settings.service';
+import { DeleteVault } from '../modals/delete-vault/delete-vault';
 
 export type SettingsTab = 'general' | 'security' | 'backup' | 'notifications';
 
@@ -15,7 +16,8 @@ export type SettingsTab = 'general' | 'security' | 'backup' | 'notifications';
   imports: [
     CommonModule,
     FormsModule,
-    CloudRestore
+    CloudRestore,
+    DeleteVault
   ],
   templateUrl: './settings.html',
   styleUrl: './settings.css',
@@ -28,6 +30,7 @@ export class Settings {
   availableBackups = signal<GoogleDriveFile[]>([]);
   isSaveChangesBtnDisable = signal<boolean>(true);
   selectedLocalFilePath = signal('');
+  isDeleteVaultModalOpen = signal<boolean>(false);
   timeOutId: any;
 
   constructor (
@@ -127,7 +130,7 @@ export class Settings {
 
   async handleLocalRestore(mode: RestoreMode, password?: string) {
     if(password && this.selectedLocalFilePath().length) {
-      const localImportResponse = await window.electronAPI?.importLocalBackup(this.selectedLocalFilePath(), password, mode);
+      const localImportResponse = await window.electronAPI?.importLocalBackup(this.selectedLocalFilePath(), password);
       console.log(localImportResponse);
     }
   }
@@ -183,6 +186,14 @@ export class Settings {
         this.isSaveChangesBtnDisable.set(false);
       }
     }, 500);
+  }
+
+  async executeVaultDeletion() {
+    const deleteResponse = await window.electronAPI?.deleteVault();
+    if(deleteResponse && deleteResponse.success) {
+      this.toastService.error('Vault Deleted', 'All local vault records have been purged.');
+      this.globalService.showAuthForm.set(true);
+    }
   }
 
 }
