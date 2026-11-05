@@ -1,59 +1,23 @@
-name: Auto Bump, Build and Release
+name: Build and Release Electron App
 
 on:
   push:
-    branches:
-      - main
-
-permissions:
-  contents: write
+    tags:
+      - 'v*'
 
 jobs:
-  bump-version:
-    if: "!contains(github.event.head_commit.message, 'chore(release):')"
-    runs-on: ubuntu-latest
-    outputs:
-      new_tag: ${{ steps.bump.outputs.new_tag }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-
-      - name: Bump version and push tag
-        id: bump
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          npm version patch --no-git-tag-version
-           VERSION=$(node -p "require('./package.json').version")
-          git add package.json
-          git commit -m "chore(release): v$VERSION [skip ci]"
-          git tag "v$VERSION"
-          git push origin main --follow-tags
-          echo "new_tag=v$VERSION" >> $GITHUB_OUTPUT
-
   release:
-    needs: bump-version
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-      - name: Checkout new release tag
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.bump-version.outputs.new_tag }}
+      - name: Check out Git repository
+        uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Install Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: 24
 
@@ -63,10 +27,11 @@ jobs:
       - name: Install Renderer Dependencies
         run: cd src/renderer/zvault && npm install
 
-      - name: Compile Main (TypeScript) and Renderer (Angular)
+      - name: Compile Main and Renderer
         run: npm run build
 
-      - name: Package and Publish to GitHub Releases
-        run: npx electron-builder --publish always
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and Publish Release
+        uses: samuelmeuli/action-electron-builder@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          release: true
