@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { CloudDrive, UserSettings } from '@zvault/shared-api';
+import { UserSettings } from '@zvault/shared-api';
 
 @Injectable({
   providedIn: 'root',
@@ -20,7 +20,9 @@ export class SettingsService {
     autoBackupEnabled: false,
     autoBackupInterval: 'weekly',
     cloudProvider: 'none',
-    cloudAccountEmail: 'none'
+    cloudAccountEmail: 'none',
+    includeSettingsInExport: false,
+    maxCloudBackups: 3
   };
 
   settings = signal<UserSettings>(this.defaultSettingsValue);
@@ -31,6 +33,8 @@ export class SettingsService {
     if (settingsResponse?.success) {      
       this.settings.set(settingsResponse.data);
       this.storedSettings.set({...settingsResponse.data});
+    } else {
+      await this.saveSettings(this.defaultSettingsValue);
     }
   }
 

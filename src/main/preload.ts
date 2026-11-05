@@ -25,15 +25,35 @@ contextBridge.exposeInMainWorld("electronAPI", {
   deleteVault: (): Promise<ApiResponse> => ipcRenderer.invoke("deleteVault"),
 
   openUrl: (url: string) => ipcRenderer.send("openUrl", url),
+  
+  // App update related ipc calls
+  getAppVersion: () => ipcRenderer.invoke('updater:get-version'),
+  checkForUpdates: () => ipcRenderer.invoke('updater:check'),
+  onUpdateNotAvailable: (cb: (info: { version: string; }) => void) => {
+    ipcRenderer.on('updater:not-available', (_e, info) => cb(info));
+  },
+  onUpdateAvailable: (cb: (info: { version: string; }) => void) => {
+    ipcRenderer.on('updater:available', (_e, info) => cb(info));
+  },
+  startDownload: () => ipcRenderer.invoke('updater:start-download'),
+  onDownloadProgress: (cb: (progress: { percent: number; bytesPerSecond: number; }) => void) => {
+    ipcRenderer.on('updater:progress', (_e, progress) => cb(progress));
+  },
+  onUpdateDownloaded: (cb: (info: { version: string; }) => void) => {
+    ipcRenderer.on('updater:downloaded', (_e, info) => cb(info));
+  },
+  onError: (cb: (message: string) => void) => {
+    ipcRenderer.on('updater:error', (_e, msg) => cb(msg));
+  },
+  quitAndInstall: () => ipcRenderer.send('updater:quit-and-install'),
 
 
   connectToCloud: (cloudDrive: CloudDrive) => ipcRenderer.invoke("connectToCloud", cloudDrive),
-  mergeGoogleCloudBackupFile: (backFileId: string, backFilename: string, masterPassword: string) => ipcRenderer.invoke("mergeGoogleCloudBackupFile", backFileId, backFilename, masterPassword),
+  importCloudBackup: (backupFileId: string, backFilename: string, masterPassword: string): Promise<ApiResponse> => ipcRenderer.invoke("importCloudBackup", backupFileId, backFilename, masterPassword),
 
   cloudSyncPasswordError: (callback: (errMessage: string) => void) => ipcRenderer.on("cloudSyncPasswordError", (_event: IpcRendererEvent, errorMsg: string) => callback(errorMsg)),
   cloudSyncPasswordSubmit: (password: string) => ipcRenderer.send("cloudSyncPasswordSubmit", password),
   cloudSyncPasswordCancel: () => ipcRenderer.send("cloudSyncPasswordCancel"),
-  importCloudBackup: (masterPassword: string) => ipcRenderer.invoke("importCloudBackup", masterPassword),
   checkExistingBackup: () => ipcRenderer.invoke("checkExistingBackup"),
   checkTokenValidity: () => ipcRenderer.invoke("checkTokenValidity"),
   backupToDrive: () => ipcRenderer.invoke("backupToDrive"),

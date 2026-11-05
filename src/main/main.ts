@@ -11,6 +11,8 @@ import {
     nativeTheme,
     clipboard
 } from "electron";
+import { autoUpdater } from "electron-updater";
+import electronLog from "electron-log";
 import path from "node:path";
 import os from "node:os";
 import fs from "node:fs";
@@ -29,7 +31,6 @@ import argon2 from "@node-rs/argon2";
 import { drive_v3, google } from "googleapis";
 import yauzl from "yauzl";
 import { ZipFile } from "yazl";
-import AdmZip from "adm-zip";
 import {
     Categories,
     CloudDrive,
@@ -43,13 +44,14 @@ import {
     ApiResponse,
     UserSettings,
     AppActiveState,
-    RestoreMode
+    RestoreMode,
+    FileToZip
 } from "../shared/api.types";
 import { setTimeout } from "node:timers";
 
 const rawCredentials: any = fs.readFileSync(path.join(__dirname, "../../credential.env"), "utf8");
 const credential: { APP_TOKEN: string; } = JSON.parse(rawCredentials);
-const SERVER_URL = "https://zvaultoauthserver-production.up.railway.app";
+const SERVER_URL = "https://zvault-oauth-server.onrender.com";
 const USER_DATA_PATH = app.getPath("userData");
 const TOKEN_PATH = path.join(USER_DATA_PATH, 'drive-token.enc');
 const VAULT_PATH = path.join(USER_DATA_PATH, 'vault.db');
@@ -102,6 +104,12 @@ let mainWindow: BrowserWindow | null = null;
 let copyTimeOutId: any;
 let windowBlurTimeOutId: any;
 let windowFocusTimeOutId: any;
+
+autoUpdater.logger = electronLog;
+(autoUpdater.logger as typeof electronLog).transports.file.level = 'info';
+
+autoUpdater.autoDownload = false;
+autoUpdater.autoInstallOnAppQuit = true;
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -167,23 +175,80 @@ app.whenReady().then(() => {
     ipcMain.handle("decryptSensitiveData", decryptSensitiveData);
     ipcMain.handle("fetchData", fetchData);
     ipcMain.handle("searchData", searchData);
-    ipcMain.handle("connectToCloud", connectToCloud);
-    ipcMain.handle("mergeGoogleCloudBackupFile", mergeGoogleCloudBackupFile);
-    ipcMain.handle("getUserSettingsData", getUserSettingsData);
-    ipcMain.handle("setUserSettingsData", setUserSettingsData);
     ipcMain.handle("copyToClipBoard", copyToClipBoard);
     ipcMain.handle("chooseLocalFile", chooseLocalFile);
+    ipcMain.handle("setUserSettingsData", setUserSettingsData);
+    ipcMain.handle("getUserSettingsData", getUserSettingsData);
+    ipcMain.handle("exportVaultLocally", exportVaultLocally);
+    ipcMain.handle("importLocalBackup", importLocalBackup);
+    ipcMain.handle("connectToCloud", connectToCloud);
+    ipcMain.handle("importCloudBackup", importCloudBackup);
     // ipcMain.handle("importCloudBackup", importGDriveData);
     // ipcMain.handle("checkExistingBackup", connectToGoogleDrive);
     // ipcMain.handle("checkTokenValidity", checkTokenValidity);
-    ipcMain.handle("importLocalBackup", importLocalBackup);
-    ipcMain.handle("exportVaultLocally", exportVaultLocally);
     ipcMain.handle("deleteVault", deleteVault);
-    // ipcMain.handle("backupToDrive", backupToDrive);
-    // ipcMain.handle("openCloudBackup", openCloudBackup);
+    ipcMain.handle("backupToDrive", backupToDrive);
     ipcMain.on("openUrl", openUrl);
 }).then(() => {
     createWindow();
+    if(app.isPackaged) {
+        autoUpdater.checkForUpdates();
+    }
+});
+
+autoUpdater.on("update-available", (info) => {
+    console.log({info});
+    if (mainWindow) mainWindow.webContents.send("update-available", info);
+});
+
+autoUpdater.on('update-not-available', (info) => {
+    if(mainWindow) mainWindow.webContents.send('updater:not-available', info);
+});
+
+ipcMain.handle('updater:check', async () => {
+    if (!app.isPackaged && mainWindow) {
+        mainWindow.webContents.send('updater:not-available', { version: app.getVersion() });
+        return;
+    }
+    await autoUpdater.checkForUpdates();
+});
+
+// Return current version from package.json
+ipcMain.handle('updater:get-version', () => {
+    return app.getVersion();
+});
+
+ipcMain.handle('updater:start-download', async () => {
+    await autoUpdater.downloadUpdate();
+});
+
+autoUpdater.on("download-progress", (progressObj) => {
+    if(mainWindow) {
+        mainWindow.webContents.send('updater:progress', {
+            percent: Math.round(progressObj.percent),
+            bytesPerSecond: progressObj.bytesPerSecond,
+        });
+        mainWindow.setProgressBar(progressObj.percent / 100);
+    }
+});
+
+autoUpdater.on("update-downloaded", (info) => {
+    if(mainWindow) {
+        mainWindow.setProgressBar(-1);
+        mainWindow.webContents.send("updater:downloaded", info);
+    }
+});
+
+ipcMain.on('updater:quit-and-install', () => {
+    autoUpdater.quitAndInstall();
+});
+
+autoUpdater.on('error', (err) => {
+    electronLog.error('Auto-updater error:', err);
+    if(mainWindow){
+        mainWindow.setProgressBar(-1);
+        mainWindow.webContents.send('updater:error', err.message);
+    }
 });
 
 app.on("window-all-closed", () => {
@@ -828,7 +893,9 @@ async function connectToGoogleDrive() {
             }
         }
     } catch (error: any) {
-        console.log(error);
+        if (error.message === 'REFRESH_TOKEN_EXPIRED') {
+
+        }
 
         await handelError(error, 'Google Connection', connectToGoogleDrive.name, "Failed to connect with Google account");
     }
@@ -907,10 +974,10 @@ async function getLocalTokenOrRefreshedToken(): Promise<{ exist: boolean, access
         fs.unlinkSync(TOKEN_PATH);
         throw new Error('REFRESH_TOKEN_EXPIRED');
     }
-    if (!res.ok) throw new Error('Server error');
+    if (!res.ok) throw new Error('SERVER_ERROR');
 
     const newTokens = await res.json();
-    storeAuthToken(JSON.stringify(newTokens));
+    await storeAuthToken(JSON.stringify(newTokens));
     return { exist: true, accessToken: newTokens.access_token };
 }
 
@@ -998,12 +1065,11 @@ async function getOrCreateBackupFolder(drive: drive_v3.Drive): Promise<string> {
 }
 
 async function listBackups(drive: drive_v3.Drive, folderId: string): Promise<drive_v3.Schema$File[]> {
-    // where name contains 'zvault-backup-' 
     const response = await drive.files.list({
         q: `'${folderId}' in parents and mimeType != 'application/vnd.google-apps.folder' and trashed = false`,
         fields: 'files(id, name, createdTime, mimeType, size)',
-        orderBy: 'createdTime desc',     // newest first
-        pageSize: 100,                    // adjust if you expect more than 100 backups
+        orderBy: 'createdTime desc',
+        pageSize: 100,
         spaces: 'drive',
         supportsAllDrives: true,
         includeItemsFromAllDrives: true,
@@ -1012,23 +1078,55 @@ async function listBackups(drive: drive_v3.Drive, folderId: string): Promise<dri
     return files;
 }
 
-async function mergeGoogleCloudBackupFile(_event: IpcMainInvokeEvent, backFileId: string, backFilename: string, masterPassword: string) {
+async function importCloudBackup(
+    _event: IpcMainInvokeEvent,
+    backupFileId: string,
+    backFilename: string,
+    masterPassword: string
+): Promise<ApiResponse> {
+    let downloadedPath = null;
     try {
         const token = await getLocalTokenOrRefreshedToken();
         if (token.exist && token.accessToken !== null) {
             const authClient = new google.auth.OAuth2();
             authClient.setCredentials({ access_token: token.accessToken });
             const drive = google.drive({ version: "v3", auth: authClient });
-            const downloadedPath = await downloadBackupFile(drive, backFileId, backFilename);
-            console.log({ downloadedPath, masterPassword });
-            return downloadedPath;
+            downloadedPath = await downloadBackupFile(drive, backupFileId, backFilename);
+            const unzipResponse = await unZipFile(downloadedPath, USER_DATA_PATH);
+            if (unzipResponse && unzipResponse.success) {
+                const appData = await getAppData();
+                const dekEncryptionKey = await deriveMasterKey(
+                    masterPassword,
+                    Buffer.from(appData.dekEncryptionKeySalt, "hex"),
+                );
+                const decryptedDEK = decryptData(
+                    appData.IV,
+                    appData.TAG,
+                    appData.encryptedData,
+                    dekEncryptionKey,
+                    "hex",
+                    "hex",
+                );
+                vaultDEK = Buffer.from(decryptedDEK, "hex");
+                if (!dbConnection) {
+                    await initializeDbConnection(decryptedDEK);
+                }
+                return { success: true, message: 'Cloud backup vault restored successfully!' };
+            } else {
+                return { success: false, message: 'Something went wrong during cloud backup vault restore!' };
+            }
         } else {
-            const error = new Error("Token not found");
-            await handelError(error, 'TOKEN_NOT_FOUND', mergeGoogleCloudBackupFile.name, 'Auth token missing, Re-authenticate again');
+            await logToFile('Auth token missing, Re-authenticate again', importCloudBackup.name);
+            return { success: false, message: 'Something went wrong during cloud backup vault restore!' };
         }
     } catch (error) {
-        console.log(error, mergeGoogleCloudBackupFile.name);
-
+        return await handelError(error, 'Cloud Backup Vault Import', importCloudBackup.name, 'Something went wrong during cloud backup vault import!');
+    } finally {
+        try {
+            await fs.promises.unlink(downloadedPath ?? path.join(USER_DATA_PATH, backFilename));
+        } catch (error: any) {
+            await logToFile(String(error), importCloudBackup.name, error);
+        }
     }
 }
 
@@ -1039,7 +1137,7 @@ async function downloadBackupFile(drive: drive_v3.Drive, fileId: string, fileNam
         const response = await drive.files.get(
             {
                 fileId: fileId,
-                alt: 'media',           // this tells API to return file content
+                alt: 'media',
             },
             {
                 responseType: 'stream',
@@ -1077,83 +1175,69 @@ function getRandomFileName() {
     return firstPart + middlePart + lastPart;
 }
 
-// async function backupToDrive(): Promise<{ success: boolean, message: string; }> {
-//     try {
-//         const auth = await getGoogleAuthClient();
-//         const drive = googleDrive({ version: "v3", auth: auth as unknown as any });
-//         const folderId = await getOrCreateBackupFolder(drive);
-//         if (dbConnection) {
-//             dbConnection.closeSync();
-//             dbConnection = null;
-//         }
-//         // const fileName = `${randomFileName}-${new Date().toISOString().replace(/[:.]/g, '-')}-${path.basename(VAULT_PATH)}`;
-//         // getAppData()
-//         const fileName = getRandomFileName();
-//         const tempBackupZipPath = path.join(USER_DATA_PATH, "cloud_backup.zip");
-//         const zip = new AdmZip();
-//         zip.addLocalFile(VAULT_PATH);
-//         zip.addLocalFile(VAULT_DATA_PATH);
-//         const exportZipResponse = await zip.writeZipPromise(tempBackupZipPath, {
-//             overwrite: true
-//         });
-//         if (!exportZipResponse) {
-//             return await handelError("Backup compression failed. Try again!", "Compression", "@backupToDrive");
-//         }
-//         if (!vaultDEK) {
-//             return await handelError("VaultDek not found", "VaultDek", "@backupToDrive", "Something went wrong. Restart the app!");
-//         }
-//         await initializeDbConnection(vaultDEK.toString("hex"));
-//         const fileStream = fs.createReadStream(tempBackupZipPath);
-//         const media = {
-//             mimeType: 'application/octet-stream',
-//             body: fileStream,
-//         };
-//         // Upload or update (simple: create new each time with unique name)
-//         const createResponse = await drive.files.create({
-//             requestBody: {
-//                 name: fileName,
-//                 parents: [folderId],
-//             },
-//             media,
-//             fields: 'id,createdTime',
-//         });
-//         if (createResponse.ok) {
-//             await fs.promises.unlink(tempBackupZipPath);
-//             console.log(`Backup successful: ${fileName}, id: ${createResponse.data.id}`);
-//             await cleanupOldBackups(drive, folderId, 3);
-//             return { success: true, message: `Backup successful! - ${createResponse.data.createdTime}` };
-//         } else {
-//             await fs.promises.unlink(tempBackupZipPath);
-//             return { success: false, message: 'Backup failed!' };
-//         }
-//     } catch (err: any) {
-//         return await handelError(err, "Backup", "@backupToDrive", "Google Drive backup failed");
-//     }
-// }
-
-// async function openCloudBackup(
-//     _event: Electron.IpcMainInvokeEvent,
-//     backupFileId: string,
-//     backupFileName: string
-// ): Promise<{ success: boolean, message: string; }> {
-//     try {
-//         const auth = await getGoogleAuthClient();
-//         const drive = googleDrive({ version: "v3", auth: auth as unknown as any });
-//         const downloadLocation = await downloadBackupFile(drive, backupFileId, backupFileName);
-//         const zip = new AdmZip(downloadLocation);
-//         return new Promise((resolve, reject) => {
-//             zip.extractAllToAsync(USER_DATA_PATH, true, false, async (error) => {
-//                 await fs.promises.unlink(downloadLocation);
-//                 resolve({ success: true, message: "Backup import successful!" });
-//                 if (error) {
-//                     reject(error);
-//                 }
-//             });
-//         });
-//     } catch (error) {
-//         return await handelError(error, "Import", "@openCloudBackup", "Backup import failed!");
-//     }
-// }
+async function backupToDrive(): Promise<{ success: boolean, message: string; }> {
+    try {
+        const token = await getLocalTokenOrRefreshedToken();
+        if(token && token.exist) {
+            const authClient = new google.auth.OAuth2();
+            authClient.setCredentials({ access_token: token.accessToken });
+            const drive = google.drive({ version: "v3", auth: authClient });
+            const folderId = await getOrCreateBackupFolder(drive);
+            if (dbConnection) {
+                dbConnection.closeSync();
+                dbConnection = null;
+            }
+            if(dbInstance) {
+                dbInstance.closeSync();
+                dbInstance = null;
+            }
+            const fileName = getRandomFileName();
+            const tempBackupZipPath = path.join(USER_DATA_PATH, "cloud_backup.zip");
+            const fileToZip: FileToZip[] = [
+                {fileName: 'vault.db', filePath: VAULT_PATH},
+                {fileName: 'vault.data', filePath: VAULT_DATA_PATH}
+            ];
+            if(userSettingsData.includeSettingsInExport) {
+                fileToZip.push({ fileName: 'user_settings.json', filePath: USER_SETTINGS_DATA_PATH})
+            }
+            const zipCreateResponse = await createZipFile(fileToZip, tempBackupZipPath);
+            if (!zipCreateResponse || !zipCreateResponse.success) {
+                return await handelError("Backup compression failed. Try again!", "Compression", "@backupToDrive");
+            }
+            if (!vaultDEK) {
+                return await handelError("VaultDek not found", "VaultDek", "@backupToDrive", "Something went wrong. Restart the app!");
+            }
+            await initializeDbConnection(vaultDEK.toString("hex"));
+            const fileStream = fs.createReadStream(tempBackupZipPath);
+            const media = {
+                mimeType: 'application/octet-stream',
+                body: fileStream,
+            };
+            const createResponse = await drive.files.create({
+                requestBody: {
+                    name: fileName,
+                    parents: [folderId],
+                },
+                media,
+                fields: 'id,createdTime',
+            });
+            if (createResponse.ok) {
+                await fs.promises.unlink(tempBackupZipPath);
+                console.log(`Backup successful: ${fileName}, id: ${createResponse.data.id}`);
+                await cleanupOldBackups(drive, folderId, userSettingsData ? userSettingsData.maxCloudBackups : 3);
+                return { success: true, message: `Backup successful! - ${createResponse.data.name}` };
+            } else {
+                await fs.promises.unlink(tempBackupZipPath);
+                return { success: false, message: 'Backup failed!' };
+            }
+        } else {
+            await logToFile('Auth token missing, Re-authenticate again', importCloudBackup.name);
+            return { success: false, message: 'Something went wrong during cloud backup vault restore!' };
+        }
+    } catch (err: any) {
+        return await handelError(err, "Backup", "@backupToDrive", "Google Drive backup failed");
+    }
+}
 
 async function cleanupOldBackups(drive: drive_v3.Drive, folderId: string, keepLatest: number = 3) {
     try {
@@ -1335,8 +1419,23 @@ async function replaceLocalFileWithCloud(
     }
 }
 
-async function createZipFile() {
-
+async function createZipFile(fileToZip: FileToZip[], outputZipPath: string): Promise<{ success: boolean, path: string | null; }> {
+    if (!fileToZip.length) return { success: false, path: null };
+    return new Promise((resolve, reject) => {
+        const zipFile = new ZipFile({ captureRejections: true });
+        const outputStream = fs.createWriteStream(outputZipPath);
+        zipFile.outputStream.pipe(outputStream);
+        outputStream.on('close', () => {
+            resolve({ success: true, path: outputZipPath });
+        });
+        outputStream.on('error', (err) => {
+            reject(err);
+        });
+        fileToZip.forEach(file => {
+            zipFile.addFile(file.filePath, file.fileName);
+        });
+        zipFile.end();
+    });
 }
 
 async function unZipFile(zipFilePath: string, extractPath: string) {
@@ -1360,7 +1459,6 @@ async function chooseLocalFile(): Promise<ApiResponse> {
     try {
         const chosenFileArray = dialog.showOpenDialogSync(mainWindow!, {
             title: "Choose your backup vault zip file",
-            // defaultPath: app.getPath("desktop"),
             properties: ["openFile"],
             filters: [{ name: 'Vault Zip', extensions: ['zip'] }]
         });
@@ -1378,7 +1476,7 @@ async function importLocalBackup(
     _event: IpcMainInvokeEvent,
     filePath: string,
     masterPassword: string
-): Promise<ApiResponse | undefined> {
+): Promise<ApiResponse> {
     let tempDirPath = null;
     try {
         tempDirPath = await fs.promises.mkdtemp(path.join(app.getPath("temp"), 'z-vault-temp'));
@@ -1418,7 +1516,7 @@ async function importLocalBackup(
         if (fs.existsSync(VAULT_DATA_PATH)) {
             await fs.promises.unlink(VAULT_DATA_PATH);
         }
-        await handelError(error, "Import", importLocalBackup.name, "Something went wrong during Vault import!");
+        return await handelError(error, "Import", importLocalBackup.name, "Something went wrong during Vault import!");
     } finally {
         if (tempDirPath) {
             try {
@@ -1430,47 +1528,52 @@ async function importLocalBackup(
     }
 }
 
-async function exportVaultLocally(): Promise<{ success: boolean, message: string; }> {
+async function exportVaultLocally(): Promise<ApiResponse> {
     try {
         if (dbConnection) {
             dbConnection.closeSync();
             dbConnection = null;
         }
-        const folderToExport = dialog.showSaveDialogSync(mainWindow!, {
+        if (dbInstance) {
+            dbInstance.closeSync();
+            dbInstance = null;
+        }
+        const vaultExportPath = dialog.showSaveDialogSync(mainWindow!, {
             title: "Select the folder to export",
-            defaultPath: userSettingsData.vaultName ?? "z-vault.zip",
+            defaultPath: userSettingsData ? userSettingsData.vaultName ?? "z-vault.zip" : "z-vault.zip",
             filters: [
                 { name: "Vault Zip", extensions: ["zip"] }
             ]
         });
-        if (!folderToExport) {
+        if (!vaultExportPath) {
             return {
                 success: false,
                 message: "Folder selection cancelled!"
             };
         }
-        const zip = new AdmZip();
-        zip.addLocalFile(VAULT_PATH);
-        zip.addLocalFile(VAULT_DATA_PATH);
-        zip.addLocalFile(USER_SETTINGS_DATA_PATH);
-        const exportZipResponse = await zip.writeZipPromise(folderToExport, {
-            overwrite: true
-        });
-        if (!exportZipResponse) {
+        const fileToExport: FileToZip[] = [
+            { fileName: 'vault.db', filePath: VAULT_PATH },
+            { fileName: 'vault.data', filePath: VAULT_DATA_PATH },
+            { fileName: 'user_settings.json', filePath: USER_SETTINGS_DATA_PATH }
+        ];
+        const createZipResponse = await createZipFile(fileToExport, vaultExportPath);
+
+        if (createZipResponse && createZipResponse.success) {
+            if (!vaultDEK) throw new Error("Something went wrong with VaultDEK!");
+            await initializeDbConnection(vaultDEK.toString("hex"));
+            return {
+                success: true,
+                message: "Export successful!",
+                data: createZipResponse.path
+            };
+        } else {
             return {
                 success: false,
                 message: "Export failed!"
             };
         }
-        if (!vaultDEK) throw new Error("Something went wrong!");
-        await initializeDbConnection(vaultDEK.toString("hex"));
-        return {
-            success: true,
-            message: "Export successful!"
-        };
     } catch (error: any) {
-        console.log({ error, where: "@exportVaultLocally" });
-        throw new Error(error?.message);
+        return await handelError(error, 'Vault Export', exportVaultLocally.name, 'Something went wrong during vault export!');
     }
 }
 
@@ -1496,7 +1599,7 @@ async function deleteVault(_event: IpcMainInvokeEvent): Promise<ApiResponse> {
         }
         return { success: true, message: 'Vault Deleted Successfully' };
     } catch (error) {
-        return await handelError(error, 'Vault Delete', deleteVault.name, 'Error occurred during Vault Delete!');
+        return await handelError(error, 'Vault Delete', deleteVault.name, 'Something went wrong during Vault Delete!');
     }
 }
 
@@ -1509,7 +1612,7 @@ async function handelError(
     const errorMessage = error instanceof Error ? error.message : String(error.message ?? error);
     const errorStack = error instanceof Error ? error.stack : 'No stack trace available';
     await logToFile(rendererMessage ?? errorMessage, where, errorStack);
-    dialog.showErrorBox(`${type} Error Occurred`, rendererMessage ?? errorMessage);
+    dialog.showErrorBox(`${type} Error`, rendererMessage ?? errorMessage);
     return {
         success: false,
         message: rendererMessage ?? errorMessage,

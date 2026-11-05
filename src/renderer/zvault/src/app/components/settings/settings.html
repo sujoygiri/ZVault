@@ -98,6 +98,33 @@
                 </svg>
                 Notifications
             </button>
+
+            <button (click)="activeTab = 'updates'"
+                [class.bg-slate-100]="activeTab === 'updates'"
+                [class.dark:bg-slate-800/80]="activeTab === 'updates'"
+                [class.text-blue-600]="activeTab === 'updates'"
+                [class.dark:text-blue-400]="activeTab === 'updates'"
+                [class.text-slate-600]="activeTab !== 'updates'"
+                [class.dark:text-slate-400]="activeTab !== 'updates'"
+                class="w-full flex items-center justify-between cursor-pointer px-4 py-3.5 rounded-xl text-sm font-semibold transition hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                <div class="flex items-center gap-3.5">
+                    <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span>About & Updates</span>
+                </div>
+            
+                <!-- Notification Badge when an update is available or ready -->
+                <!-- @if (updateService.hasUpdateAction()) {
+                <span
+                    class="flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-bold rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                    <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-ping"></span>
+                    New
+                </span>
+                } -->
+            </button>
         </nav>
 
         <!-- Tab Content Panels -->
@@ -354,158 +381,297 @@
 
             <!-- TAB 3: BACKUP & SYNC -->
             @if (activeTab === 'backup') {
-            <div class="space-y-8 max-w-2xl">
-                <div>
-                    <h3
-                        class="text-lg font-bold text-slate-900 dark:text-slate-100">
-                        Backup & Cloud Synchronization
-                    </h3>
-                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                        Manage encrypted local snapshots or sync across devices.
-                    </p>
+            <div class="space-y-8 max-w-2xl animate-in fade-in duration-200">
+                <!-- Header -->
+                <div class="flex items-start justify-between">
+                    <div>
+                        <h3
+                            class="text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                            Backup & Cloud Synchronization
+                        </h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            Manage secure encrypted local snapshots or configure automated
+                            cloud backups.
+                        </p>
+                    </div>
+                    <div
+                        class="p-2.5 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M3 15a4 4 0 004 4h10a4 4 0 004-4M7 10l5-5 5 5M12 15V3" />
+                        </svg>
+                    </div>
                 </div>
-
+            
                 <div class="space-y-6">
-                    <!-- Local Export / Import Card -->
+                    <!-- 1. INDEPENDENT OPTION: Include Settings in Export File -->
                     <div
-                        class="p-5 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-slate-200/80 dark:border-slate-800/80 space-y-4">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h4
-                                    class="text-sm font-bold text-slate-800 dark:text-slate-200">
-                                    Encrypted Local Backup
-                                </h4>
-                                <p
-                                    class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                    Save the vault&apos;s snapshot to a file or
-                                    restore vault from
-                                    a file.
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="flex flex-wrap gap-3 pt-1">
-                            <button type="button" (click)="exportLocalBackup()"
-                                class="group flex item-center justify-center gap-1.5 px-4 py-2.5 text-xs font-semibold cursor-pointer text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                    class="w-4 h-4 fill-sky-500"
-                                    viewBox="0 -960 960 960" fill="">
-                                    <path
-                                        d="M480-480ZM202-65l-56-57 118-118h-90v-80h226v226h-80v-89L202-65Zm278-15v-80h240v-440H520v-200H240v400h-80v-400q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H480Z" />
-                                </svg>
-                                <span class="group-hover:text-sky-500">Export
-                                    Backup</span>
-                            </button>
-
-                            <button type="button" (click)="importLocalBackup()"
-                                class="group flex item-center justify-center gap-1.5 px-4 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition cursor-pointer">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                    class="w-4 h-4 fill-sky-500"
-                                    viewBox="0 -960 960 960" fill="">
-                                    <path
-                                        d="m480-280 160-160-56-56-64 62v-166h-80v166l-64-62-56 56 160 160ZM240-80q-33 0-56.5-23.5T160-160v-480l240-240h320q33 0 56.5 23.5T800-800v640q0 33-23.5 56.5T720-80H240Zm0-80h480v-640H434L240-606v446Zm0 0h480-480Z" />
-                                </svg>
-                                <span class="group-hover:text-sky-500">Import
-                                    Backup</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Cloud Provider Sync -->
-                    <div
-                        class="p-5 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-slate-200/80 dark:border-slate-800/80 space-y-4">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <h4
-                                    class="text-sm font-bold text-slate-800 dark:text-slate-200">
-                                    Cloud Storage Sync
-                                </h4>
-                                <p
-                                    class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                    Sync encrypted data using your preferred
-                                    cloud service.
-                                </p>
-                            </div>
-                            @if (settingsService.settings().cloudProvider !==
-                            'none') {
-                            <span
-                                class="text-xs font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/50 px-2.5 py-1 rounded-md">
-                                Connected
-                            </span>
-                            }
-                        </div>
-
-                        @if (settingsService.settings().cloudProvider ===
-                        'none') {
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <button type="button"
-                                (click)="connectCloud('googleDrive')"
-                                class="flex items-center justify-center cursor-pointer gap-2 p-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/80 transition">
-                                Google Drive
-                            </button>
-
-                            <button type="button"
-                                (click)="connectCloud('oneDrive')"
-                                class="flex items-center justify-center cursor-pointer gap-2 p-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/80 transition">
-                                Microsoft OneDrive
-                            </button>
-                        </div>
-                        } @else {
-                        <div
-                            class="flex items-center justify-between bg-white dark:bg-slate-900 p-4 rounded-lg border border-slate-200 dark:border-slate-800">
-                            <div>
-                                <p
-                                    class="text-sm font-bold text-slate-800 dark:text-slate-200 capitalize">
-                                    {{ settingsService.settings().cloudProvider
-                                    }} Account
-                                </p>
-                                <p
-                                    class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                    {{
-                                    settingsService.settings().cloudAccountEmail
-                                    }}
-                                </p>
-                            </div>
-                            <button type="button" (click)="disconnectCloud()"
-                                class="text-sm font-semibold cursor-pointer text-red-600 hover:underline">
-                                Disconnect
-                            </button>
-                        </div>
-                        }
-                    </div>
-
-                    <!-- Auto Backup Schedule Switch -->
-                    <div class="flex items-center justify-between pt-2">
+                        class="p-5 bg-slate-900/40 dark:bg-slate-900/40 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm flex items-center justify-between gap-4">
                         <div>
-                            <label
-                                class="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                                Automated Background Backups
-                            </label>
-                            <p
-                                class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                Periodically snapshot vault database.
+                            <h4
+                                class="text-sm font-bold text-slate-800 dark:text-slate-100">
+                                Include Settings in Export File
+                            </h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                Automatically bundle application configurations and
+                                preferences into exported local snapshots.
                             </p>
                         </div>
                         <input type="checkbox"
-                            [(ngModel)]="settingsService.settings().autoBackupEnabled"
-                            class="w-5 h-5 text-blue-600 border-slate-300 dark:border-slate-700 rounded focus:ring-0 cursor-pointer" />
+                            [(ngModel)]="settingsService.settings().includeSettingsInExport"
+                            class="w-5 h-5 accent-cyan-500 rounded focus:ring-0 cursor-pointer" />
                     </div>
-
-                    @if (settingsService.settings().autoBackupEnabled) {
-                    <div>
-                        <label
-                            class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                            Backup Frequency
-                        </label>
-                        <select
-                            [(ngModel)]="settingsService.settings().autoBackupInterval"
-                            class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:border-blue-500 cursor-pointer">
-                            <option value="daily">Daily</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="monthly">Monthly</option>
-                        </select>
+            
+                    <!-- 2. Encrypted Local Backup Card -->
+                    <div
+                        class="p-5 bg-slate-900/40 dark:bg-slate-900/40 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm flex items-center justify-between gap-4 transition hover:border-slate-700">
+                        <div class="flex items-start gap-4">
+                            <div
+                                class="p-3 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20 shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6"
+                                    viewBox="0 -960 960 960" fill="currentColor">
+                                    <path
+                                        d="M480-480ZM202-65l-56-57 118-118h-90v-80h226v226h-80v-89L202-65Zm278-15v-80h240v-440H520v-200H240v400h-80v-400q0-33 23.5-56.5T240-880h320l240 240v480q0 33-23.5 56.5T720-80H480Z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h4
+                                    class="text-sm font-bold text-slate-800 dark:text-slate-100">
+                                    Encrypted Local Snapshot
+                                </h4>
+                                <p
+                                    class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+                                    Export an immediate, password-protected archive directly
+                                    to your local storage drive.
+                                </p>
+                            </div>
+                        </div>
+            
+                        <button type="button" (click)="exportLocalBackup()"
+                            class="shrink-0 flex items-center gap-2 px-4 py-2.5 text-xs font-semibold cursor-pointer text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 rounded-xl transition active:scale-95 shadow-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4"
+                                viewBox="0 -960 960 960" fill="currentColor">
+                                <path
+                                    d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z" />
+                            </svg>
+                            Export Backup
+                        </button>
                     </div>
-                    }
+            
+                    <!-- 3. Cloud Backup Card -->
+                    <div
+                        class="p-5 bg-slate-900/40 dark:bg-slate-900/40 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm space-y-5">
+                        <div>
+                            <h4
+                                class="text-sm font-bold text-slate-800 dark:text-slate-100">
+                                Cloud Backup
+                            </h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                Store encrypted vault snapshots automatically or manually in
+                                your cloud storage.
+                            </p>
+                        </div>
+            
+                        <!-- Always Visible Cloud Provider Options Grid -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <!-- Google Drive (Connected State vs Connect Button) -->
+                            @if (settingsService.settings().cloudProvider === 'googleDrive')
+                            {
+                            <div
+                                class="sm:col-span-3 p-4 bg-slate-950/80 border border-emerald-500/30 rounded-xl flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <svg class="w-6 h-6 shrink-0" viewBox="0 0 87.3 78.2"
+                                        xmlns="http://www.w3.org/2000/svg">
+                                        <path d="m6.6 66.85 12.25 21.25h43.75L50.35 66.85z"
+                                            fill="#0066da"
+                                            transform="translate(-6.6 -10)" />
+                                        <path d="m43.65 24.3-21.8 37.8H6.6L28.4 24.3z"
+                                            fill="#00ac47"
+                                            transform="translate(-6.6 -10)" />
+                                        <path
+                                            d="m73.55 88.1 13.75-23.85-21.8-37.8-13.75 23.85z"
+                                            fill="#ea4335"
+                                            transform="translate(-6.6 -10)" />
+                                        <path d="m43.65 24.3 21.8 37.8h30.9L74.55 24.3z"
+                                            fill="#ffba00"
+                                            transform="translate(-33.6 -10)" />
+                                        <path
+                                            d="m28.4 24.3 21.95 38.05 13.75-23.85L50.35 10.5z"
+                                            fill="#0066da"
+                                            transform="translate(-16.9 -10)" />
+                                    </svg>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <p class="text-xs font-bold text-slate-200">
+                                                Google Drive Connected</p>
+                                            <span
+                                                class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-400 mt-0.5">{{
+                                            settingsService.settings().cloudAccountEmail ||
+                                            'Connected Account' }}</p>
+                                    </div>
+                                </div>
+                                <button type="button" (click)="disconnectCloud()"
+                                    class="px-3 py-1.5 text-xs font-semibold cursor-pointer text-rose-400 hover:text-white hover:bg-rose-600/20 border border-rose-500/20 rounded-lg transition">
+                                    Disconnect
+                                </button>
+                            </div>
+                            } @else {
+                            <button type="button" (click)="connectCloud('googleDrive')"
+                                class="flex items-center justify-start gap-3 p-3.5 bg-slate-950/60 hover:bg-slate-800/60 border border-slate-800 rounded-xl text-xs font-semibold text-slate-200 transition group cursor-pointer shadow-inner">
+                                <svg class="w-5 h-5 shrink-0" viewBox="0 0 87.3 78.2"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path d="m6.6 66.85 12.25 21.25h43.75L50.35 66.85z"
+                                        fill="#0066da" transform="translate(-6.6 -10)" />
+                                    <path d="m43.65 24.3-21.8 37.8H6.6L28.4 24.3z"
+                                        fill="#00ac47" transform="translate(-6.6 -10)" />
+                                    <path d="m73.55 88.1 13.75-23.85-21.8-37.8-13.75 23.85z"
+                                        fill="#ea4335" transform="translate(-6.6 -10)" />
+                                    <path d="m43.65 24.3 21.8 37.8h30.9L74.55 24.3z"
+                                        fill="#ffba00" transform="translate(-33.6 -10)" />
+                                    <path d="m28.4 24.3 21.95 38.05 13.75-23.85L50.35 10.5z"
+                                        fill="#0066da" transform="translate(-16.9 -10)" />
+                                </svg>
+                                <div class="text-left min-w-0">
+                                    <p
+                                        class="text-xs font-bold text-slate-200 group-hover:text-cyan-400 transition truncate">
+                                        Google Drive</p>
+                                    <p class="text-[10px] text-cyan-400 font-normal">Connect
+                                        Account</p>
+                                </div>
+                            </button>
+                            }
+            
+                            <!-- Microsoft OneDrive (Coming Soon) -->
+                            <div
+                                class="flex items-center justify-between p-3.5 bg-slate-950/40 border border-slate-800/60 rounded-xl opacity-60 cursor-not-allowed">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24"
+                                        fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path
+                                            d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"
+                                            fill="#0078D4" />
+                                    </svg>
+                                    <div class="text-left min-w-0">
+                                        <p
+                                            class="text-xs font-bold text-slate-300 truncate">
+                                            OneDrive</p>
+                                        <p class="text-[10px] text-amber-400 font-medium">
+                                            Coming Soon</p>
+                                    </div>
+                                </div>
+                                <span class="text-[10px] text-slate-500">🔒</span>
+                            </div>
+            
+                            <!-- Dropbox (Coming Soon) -->
+                            <div
+                                class="flex items-center justify-between p-3.5 bg-slate-950/40 border border-slate-800/60 rounded-xl opacity-60 cursor-not-allowed">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <svg class="w-5 h-5 shrink-0" viewBox="0 0 43 39"
+                                        fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path
+                                            d="M10.75 0L0 7.75L10.75 15.5L21.5 7.75L10.75 0Z"
+                                            fill="#0061FE" />
+                                        <path
+                                            d="M32.25 0L21.5 7.75L32.25 15.5L43 7.75L32.25 0Z"
+                                            fill="#0061FE" />
+                                        <path
+                                            d="M10.75 23.25L0 31L10.75 38.75L21.5 31L10.75 23.25Z"
+                                            fill="#0061FE" />
+                                        <path
+                                            d="M32.25 23.25L21.5 31L32.25 38.75L43 31L32.25 23.25Z"
+                                            fill="#0061FE" />
+                                        <path
+                                            d="M10.75 15.5L21.5 23.25L32.25 15.5L21.5 7.75L10.75 15.5Z"
+                                            fill="#0061FE" />
+                                    </svg>
+                                    <div class="text-left min-w-0">
+                                        <p
+                                            class="text-xs font-bold text-slate-300 truncate">
+                                            Dropbox</p>
+                                        <p class="text-[10px] text-amber-400 font-medium">
+                                            Coming Soon</p>
+                                    </div>
+                                </div>
+                                <span class="text-[10px] text-slate-500">🔒</span>
+                            </div>
+                        </div>
+            
+                        <!-- Cloud Automated Backup Settings, Retention, & Manual Trigger -->
+                        <div class="space-y-4 pt-4 border-t border-slate-800/80">
+                            <!-- Max Cloud Backups Retention Selection -->
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <label class="text-xs font-semibold text-slate-300">
+                                        Max Cloud Backups Retention
+                                    </label>
+                                    <p
+                                        class="text-[11px] text-slate-500 dark:text-slate-400">
+                                        Maximum number of backup snapshot revisions stored
+                                        in the cloud.
+                                    </p>
+                                </div>
+                                <select
+                                    #maxBackupCountDropdown
+                                    (change)="handleSettingsUpdate('maxCloudBackups', $any(+maxBackupCountDropdown.value))"
+                                    class="bg-slate-950/80 border border-slate-700/60 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 cursor-pointer">
+                                    <option [defaultSelected]="true" [value]="3">3 Backups</option>
+                                    <option [value]="5">5 Backups</option>
+                                    <option [value]="10">10 Backups</option>
+                                </select>
+                            </div>
+            
+                            <!-- Automated Background Backups Toggle -->
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <label class="text-xs font-semibold text-slate-300">
+                                        Automated Background Backups
+                                    </label>
+                                    <p
+                                        class="text-[11px] text-slate-500 dark:text-slate-400">
+                                        Periodically snapshot and upload vault database
+                                        securely to cloud storage.
+                                    </p>
+                                </div>
+                                <input type="checkbox"
+                                    [(ngModel)]="settingsService.settings().autoBackupEnabled"
+                                    class="w-5 h-5 accent-cyan-500 rounded focus:ring-0 cursor-pointer" />
+                            </div>
+            
+                            @if (settingsService.settings().autoBackupEnabled) {
+                            <div class="pl-2">
+                                <label
+                                    class="block text-xs font-semibold text-slate-300 mb-1.5">
+                                    Backup Frequency Schedule
+                                </label>
+                                <select
+                                    [(ngModel)]="settingsService.settings().autoBackupInterval"
+                                    class="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 cursor-pointer">
+                                    <option value="daily">Daily Snapshot</option>
+                                    <option value="weekly">Weekly Snapshot</option>
+                                    <option value="monthly">Monthly Snapshot</option>
+                                </select>
+                            </div>
+                            }
+            
+                            <!-- Manual Backup Trigger Button -->
+                            <div class="pt-2 flex justify-end">
+                                <button type="button" (click)="triggerManualCloudBackup()"
+                                    [disabled]="settingsService.settings().cloudProvider === 'none'"
+                                    class="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold cursor-pointer text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 disabled:opacity-40 disabled:cursor-not-allowed border border-cyan-500/30 rounded-xl transition active:scale-95 shadow-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4"
+                                        fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                    </svg>
+                                    Backup to Cloud Now
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             }
@@ -533,12 +699,150 @@
             </div>
             }
 
+            <!-- TAB 5: UPDATES -->
+            @if (activeTab === 'updates') {
+            <div class="space-y-8 max-w-2xl animate-in fade-in duration-200">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">
+                        Application Updates
+                    </h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                        Keep ZVault up to date with the latest security patches and
+                        features.
+                    </p>
+                </div>
+            
+                <!-- Main Update Card -->
+                <div
+                    class="p-6 bg-slate-50 dark:bg-slate-900/40 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm space-y-6">
+                    <div
+                        class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="flex items-start gap-4">
+                            <!-- Status Icon -->
+                            <div
+                                class="p-3 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 shrink-0">
+                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                                </svg>
+                            </div>
+            
+                            <div>
+                                <div class="flex items-center gap-2.5">
+                                    <h4
+                                        class="text-base font-bold text-slate-900 dark:text-slate-100">
+                                        ZVault Desktop
+                                    </h4>
+                                    <span
+                                        class="text-xs font-mono font-semibold px-2.5 py-0.5 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                                        v{{ updateService.currentVersion() }}
+                                    </span>
+                                </div>
+            
+                                <!-- Dynamic Subtitle based on state -->
+                                @switch (updateService.status()) {
+                                @case ('available') {
+                                <p class="text-xs text-blue-400 font-medium mt-1">
+                                    Version {{ updateService.latestVersion() }} is available
+                                    for download.
+                                </p>
+                                }
+                                @case ('downloading') {
+                                <p class="text-xs text-slate-400 mt-1">
+                                    Downloading v{{ updateService.latestVersion() }} ({{
+                                    updateService.downloadSpeedKB() }} KB/s)...
+                                </p>
+                                }
+                                @case ('downloaded') {
+                                <p class="text-xs text-emerald-400 font-medium mt-1">
+                                    Version {{ updateService.latestVersion() }} is ready.
+                                    Restart ZVault to apply.
+                                </p>
+                                }
+                                @case ('up-to-date') {
+                                <p class="text-xs text-emerald-400 mt-1">
+                                    You are running the latest version of ZVault.
+                                </p>
+                                }
+                                @case ('error') {
+                                <p class="text-xs text-rose-400 mt-1">
+                                    Update failed: {{ updateService.errorMessage() }}
+                                </p>
+                                }
+                                @default {
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                    Check manually or wait for automatic background update
+                                    checks.
+                                </p>
+                                }
+                                }
+                            </div>
+                        </div>
+            
+                        <!-- ACTION BUTTON AREA -->
+                        <div class="shrink-0">
+                            @if (updateService.hasUpdateAction() || updateService.status()
+                            === 'error') {
+                            <!-- MORPHING BUTTON: Update Available -> Progress Bar Inside -> Restart -->
+                            <button type="button"
+                                (click)="updateService.handlePrimaryButtonClick()"
+                                [disabled]="updateService.status() === 'downloading'"
+                                class="relative overflow-hidden min-w-50 px-5 py-2.5 rounded-xl text-xs font-semibold text-white shadow-sm transition cursor-pointer disabled:cursor-wait border"
+                                [class.bg-slate-800]="updateService.status() === 'downloading'"
+                                [class.border-blue-500/40]="updateService.status() !== 'downloaded'"
+                                [class.bg-blue-600]="updateService.status() === 'available' || updateService.status() === 'error'"
+                                [class.hover:bg-blue-500]="updateService.status() === 'available' || updateService.status() === 'error'"
+                                [class.bg-emerald-600]="updateService.status() === 'downloaded'"
+                                [class.hover:bg-emerald-500]="updateService.status() === 'downloaded'"
+                                [class.border-emerald-500/40]="updateService.status() === 'downloaded'">
+            
+                                <!-- Embedded Progress Bar Fill Inside Button -->
+                                @if (updateService.status() === 'downloading') {
+                                <span
+                                    class="absolute inset-y-0 left-0 bg-blue-600 transition-all duration-200 ease-out"
+                                    [style.width.%]="updateService.progress()">
+                                </span>
+                                }
+            
+                                <!-- Button Foreground Text -->
+                                <span
+                                    class="relative z-10 flex items-center justify-center gap-2">
+                                    @switch (updateService.status()) {
+                                    @case ('available') {
+                                    <span>Update Available (v{{
+                                        updateService.latestVersion() }})</span>
+                                    }
+                                    @case ('downloading') {
+                                    <span>Downloading... {{ updateService.progress()
+                                        }}%</span>
+                                    }
+                                    @case ('downloaded') {
+                                    <span>Restart to Update</span>
+                                    }
+                                    @case ('error') {
+                                    <span>Retry Update</span>
+                                    }
+                                    }
+                                </span>
+                            </button>
+                            } @else {
+                            <!-- Standard Check for Updates Button when no update is queued -->
+                            <button type="button" (click)="updateService.checkForUpdates()"
+                                [disabled]="updateService.status() === 'checking'"
+                                class="px-4 py-2.5 text-xs font-semibold cursor-pointer text-slate-700 dark:text-slate-200 bg-slate-200/70 dark:bg-slate-800 hover:bg-slate-300/70 dark:hover:bg-slate-700 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed">
+                                {{ updateService.status() === 'checking' ? 'Checking...' :
+                                'Check for Updates' }}
+                            </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+            }
+
         </div>
     </div>
-    @if (showRestoreModal()) {
-    <app-cloud-restore [backups]="availableBackups()" (skip)="onModalDismiss()"
-        (restore)="onExecuteRestore($event)" />
-    }
     <app-delete-vault [isOpen]="isDeleteVaultModalOpen()"
         (close)="isDeleteVaultModalOpen.set(false)"
         (confirm)="executeVaultDeletion()">

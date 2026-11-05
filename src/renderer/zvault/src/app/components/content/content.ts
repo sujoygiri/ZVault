@@ -12,6 +12,7 @@ import { Settings } from "../settings/settings";
 import { Sidebar } from '../sidebar/sidebar';
 import { PasswordView } from '../password-view/password-view';
 import { TextView } from "../text-view/text-view";
+import { UpdateService } from '../../services/update.service';
 
 
 @Component({
@@ -55,9 +56,9 @@ export class Content implements OnInit {
   textDataToBeEdited = signal<any>(null);
 
   constructor (
+    private toastService: ToastService,
     protected globalService: GlobalService,
-    private themeService: ThemeService,
-    private toastService: ToastService
+    protected updateService: UpdateService,
   ) { }
 
   ngOnInit(): void {

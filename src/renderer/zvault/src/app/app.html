@@ -14,7 +14,7 @@
     </div>
 } @else {
     @if (globalService.showAuthForm()) {
-        <app-auth [isVaultExist]="isVaultExist()" (vaultDataEmitter)="receivedVaultData($event)"/>
+        <app-auth [isVaultExist]="globalService.isVaultExist()" (vaultDataEmitter)="receivedVaultData($event)"/>
     } @else {
         <app-content [vaultData]="vaultData()"/>
     }

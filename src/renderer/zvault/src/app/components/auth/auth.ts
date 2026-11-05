@@ -1,7 +1,7 @@
 import { Component, signal, input, output, OnInit, viewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
-import { ResponsePayload } from '@zvault/shared-api';
+import { CloudDrive, GoogleDriveFile, ResponsePayload } from '@zvault/shared-api';
 import { GlobalService } from '../../services/global.service';
 import { ToastService } from '../../services/toast.service';
 
@@ -10,14 +10,8 @@ export type SetupMode =
   | 'create-vault'
   | 'local-backup-prompt'
   | 'cloud-platforms'
-  | 'cloud-backups-list';
-
-export interface CloudBackupItem {
-  id: string;
-  name: string;
-  size: string;
-  lastModified: string;
-}
+  | 'cloud-backups-list'
+  | 'cloud-master-password';
 
 @Component({
   selector: 'app-auth',
@@ -44,11 +38,12 @@ export class Auth implements OnInit {
   unlockVaultForm!: FormGroup;
   createVaultForm!: FormGroup;
   localBackupForm!: FormGroup;
+  cloudMasterPasswordForm!: FormGroup;
 
   // Cloud Backup State
-  selectedCloudProvider = signal<string | null>(null);
-  cloudBackups = signal<CloudBackupItem[]>([]);
-  selectedBackupId = signal<string | null>(null);
+  selectedCloudProvider = signal<CloudDrive>('none');
+  cloudBackups = signal<GoogleDriveFile[]>([]);
+  selectedBackupFile = signal<{id: string; fileName: string} | null>(null);
 
   constructor (
     private formBuilder: FormBuilder,
@@ -68,7 +63,11 @@ export class Auth implements OnInit {
     });
 
     this.localBackupForm = this.formBuilder.group({
-      backupFilePath: new FormControl({value: null, disabled: true}, Validators.required),
+      backupFilePath: new FormControl({ value: null, disabled: true }, Validators.required),
+      masterPassword: ['', Validators.required]
+    });
+
+    this.cloudMasterPasswordForm = this.formBuilder.group({
       masterPassword: ['', Validators.required]
     });
   }
@@ -88,7 +87,7 @@ export class Auth implements OnInit {
 
   setSetupMode(mode: SetupMode) {
     this.setupMode.set(mode);
-    this.selectedBackupId.set(null);
+    this.selectedBackupFile.set(null);
   }
 
   async handleVaultUnlock() {
@@ -121,19 +120,23 @@ export class Auth implements OnInit {
     if (this.localBackupForm.invalid) return;
     const masterPassword = this.localBackupForm.get('masterPassword')?.value;
     const filePath = this.selectedFilePath();
-    if(filePath && masterPassword) {
+    if (filePath && masterPassword) {
       this.isLoading.set(true);
       const importResponse = await window.electronAPI?.importLocalBackup(filePath, masterPassword);
-      if(importResponse && importResponse.success) {
+      if (importResponse && importResponse.success) {
         const response = await this.globalService.getVaultData();
-        this.vaultDataEmitter.emit(response!);
-        this.isLoading.set(false);
-        this.toastService.success('Backup Restored', importResponse.message ?? 'Local vault successfully restored.');
+        if(response){
+          this.globalService.selectedMenuItem.set('passwords');
+          this.vaultDataEmitter.emit(response);
+          this.isLoading.set(false);
+          this.toastService.success('Backup Restored', importResponse.message ?? 'Local vault successfully restored.');
+        } else {
+          this.isLoading.set(false);
+          this.toastService.error('Backup Restore Failed', importResponse.message ?? 'Something went wrong during backup restore!');
+        }
       } else {
         this.isLoading.set(false);
       }
-    } else {
-      this.isLoading.set(false);
     }
   }
 
@@ -172,41 +175,88 @@ export class Auth implements OnInit {
     }
   }
 
-  connectCloudProvider(provider: 'google' | 'microsoft' | 'dropbox') {
+  async connectCloudProvider(provider: 'google' | 'microsoft' | 'dropbox') {
+    switch (provider) {
+      case 'google':
+        this.selectedCloudProvider.set('googleDrive');
+        break;
+      case 'microsoft':
+        this.selectedCloudProvider.set('oneDrive');
+        break;
+      case 'dropbox':
+        this.selectedCloudProvider.set('dropBox');
+        break;
+      default:
+        break;
+    }
     if (provider !== 'google') {
       this.toastService.info('Coming Soon', `${provider.charAt(0).toUpperCase() + provider.slice(1)} integration will be available soon.`);
       return;
     }
-
-    this.selectedCloudProvider.set(provider);
     this.isLoading.set(true);
-
-    // Simulate Google Drive OAuth and fetching backups
-    setTimeout(() => {
-      this.isLoading.set(false);
-      // Mock fetched backups list
-      this.cloudBackups.set([
-        { id: 'gb-1', name: 'master_vault_backup_2026_05.vaultbak', size: '2.4 MB', lastModified: 'May 10, 2026, 14:32' },
-        { id: 'gb-2', name: 'vault_snapshot_auto_2026_04.vaultbak', size: '1.8 MB', lastModified: 'Apr 28, 2026, 09:15' },
-        { id: 'gb-3', name: 'backup_export_initial.vaultbak', size: '940 KB', lastModified: 'Mar 15, 2026, 18:40' }
-      ]);
-      this.setupMode.set('cloud-backups-list');
-      this.toastService.success('Connected to Google Drive', 'Retrieved available vault backups.');
-    }, 1500);
+    const backupResponse = await window.electronAPI?.connectToCloud(this.selectedCloudProvider());
+    const backUpVaultFile = backupResponse?.data
+    if (backupResponse && backupResponse.isBackupPresent && backUpVaultFile) {
+      if(backUpVaultFile.length) {
+        const modifiedVaultFile = backUpVaultFile.map(file => {
+          file.size = this.globalService.formatBytes(Number(file.size ?? 0));
+          file.createdTime = this.globalService.formatDateTime(String(file.createdTime));
+          return file;
+        });
+        this.cloudBackups.set(modifiedVaultFile);
+        this.setupMode.set('cloud-backups-list');
+        this.toastService.success('Connected to Google Drive', 'Retrieved available vault backups.');
+      } else {
+        this.setupMode.set('options');
+        this.toastService.success('No Backup Found', 'No backup file found in the Google Drive!');
+      }
+    }
+    this.isLoading.set(false);
   }
 
-  selectCloudBackup(id: string) {
-    this.selectedBackupId.set(id);
+  proceedToCloudMasterPassword() {
+    if (!this.selectedBackupFile()) {
+      this.toastService.warning('Selection Required', 'Please choose a backup file to proceed.');
+      return;
+    }
+    this.setupMode.set('cloud-master-password');
   }
 
-  restoreSelectedCloudBackup() {
-    if (!this.selectedBackupId()) return;
+  async handleCloudBackupRestore() {
+    if (this.cloudMasterPasswordForm.invalid) return;
+
+    const backupItem = this.selectedBackupFile();
+    const masterPassword = this.cloudMasterPasswordForm.get('masterPassword')?.value;
+
+    if (!backupItem) return;
+
+    const payload = {
+      fileId: backupItem.id,
+      fileName: backupItem.fileName,
+      masterPassword: masterPassword
+    };
+
     this.isLoading.set(true);
-    setTimeout(() => {
+
+    try {
+      const cloudBackupResponse = await window.electronAPI?.importCloudBackup(payload.fileId, payload.fileName, payload.masterPassword);
+      if(cloudBackupResponse && cloudBackupResponse.success) {
+        this.toastService.success('Cloud Restore Successful', 'Vault synchronized and unlocked.');
+        const vaultDataResponse = await this.globalService.getVaultData();
+        if(vaultDataResponse) {
+          this.globalService.selectedMenuItem.set('passwords');
+          this.vaultDataEmitter.emit(vaultDataResponse);
+        } else {
+          this.toastService.error('Data Error', cloudBackupResponse?.message || 'Failed to load Vault data.');
+        }
+      } else {
+        this.toastService.error('Restore Failed', cloudBackupResponse?.message || 'Invalid master password or corrupted backup.');
+      }
       this.isLoading.set(false);
-      this.toastService.success('Cloud Restore Successful', 'Vault synchronized and unlocked.');
-      // this.isVaultExist = true;
-    }, 1200);
+    } catch (error) {
+      this.isLoading.set(false);
+      this.toastService.error('Error', 'An error occurred while Importing cloud backup.');
+    }
   }
 
 }

@@ -24,7 +24,6 @@ export class App implements OnInit {
   protected readonly title = signal('zvault');
 
   isLoading = signal<boolean>(false);
-  isVaultExist = signal<boolean>(false);
   vaultData = signal<ResponsePayload | null>(null);
 
   constructor(
@@ -46,13 +45,13 @@ export class App implements OnInit {
   async handleVaultExistStatus() {
     try {
       this.isLoading.set(true);
-      const status = await window.electronAPI?.vaultExistStatus();
+      const status = await this.globalService.checkVaultExistStatus();
       this.isLoading.set(false);
       console.log({status});
-      
-      this.isVaultExist.set(status ?? false);
+      this.globalService.isVaultExist.set(status ?? false);
     } catch (error) {
-      
+      this.globalService.isVaultExist.set(false);
+      this.isLoading.set(false);
     } finally {
       this.isLoading.set(false);
     }
