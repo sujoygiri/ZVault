@@ -43,8 +43,6 @@ import {
     TextDetails,
     ApiResponse,
     UserSettings,
-    AppActiveState,
-    RestoreMode,
     FileToZip
 } from "../shared/api.types";
 import { setTimeout } from "node:timers";
@@ -55,7 +53,6 @@ const SERVER_URL = "https://zvault-oauth-server.onrender.com";
 const USER_DATA_PATH = app.getPath("userData");
 const TOKEN_PATH = path.join(USER_DATA_PATH, 'drive-token.enc');
 const VAULT_PATH = path.join(USER_DATA_PATH, 'vault.db');
-const TEMP_VAULT_PATH = path.join(app.getPath("temp"), 'zvault-cloud-latest.db');
 const VAULT_DATA_PATH = path.join(USER_DATA_PATH, "vault.data");
 const USER_SETTINGS_DATA_PATH = path.join(USER_DATA_PATH, 'user_settings.json');
 const BACKUP_FOLDER_NAME = 'ZVault Backups';
@@ -102,8 +99,6 @@ let dbConnection: DuckDBConnection | null = null;
 let dbInstance: DuckDBInstance | null = null;
 let mainWindow: BrowserWindow | null = null;
 let copyTimeOutId: any;
-let windowBlurTimeOutId: any;
-let windowFocusTimeOutId: any;
 
 autoUpdater.logger = electronLog;
 (autoUpdater.logger as typeof electronLog).transports.file.level = 'info';
@@ -111,12 +106,19 @@ autoUpdater.logger = electronLog;
 autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = true;
 
+function getAppIconPath(): string {
+    return app.isPackaged
+        ? path.join(process.resourcesPath, 'icon.png')
+        : path.join(__dirname, '../../build/icon.png');
+}
+
 function createWindow() {
     mainWindow = new BrowserWindow({
         width: 1200,
         minWidth: 1200,
         height: 900,
         minHeight: 900,
+        icon: getAppIconPath(),
         webPreferences: {
             preload: path.join(__dirname, "preload.js"), // Optional preload
             nodeIntegration: false, // Keep false for security
@@ -191,18 +193,18 @@ app.whenReady().then(() => {
     ipcMain.on("openUrl", openUrl);
 }).then(() => {
     createWindow();
-    if(app.isPackaged) {
+    if (app.isPackaged) {
         autoUpdater.checkForUpdates();
     }
 });
 
 autoUpdater.on("update-available", (info) => {
-    console.log({info});
+    console.log({ info });
     if (mainWindow) mainWindow.webContents.send("update-available", info);
 });
 
 autoUpdater.on('update-not-available', (info) => {
-    if(mainWindow) mainWindow.webContents.send('updater:not-available', info);
+    if (mainWindow) mainWindow.webContents.send('updater:not-available', info);
 });
 
 ipcMain.handle('updater:check', async () => {
@@ -223,7 +225,7 @@ ipcMain.handle('updater:start-download', async () => {
 });
 
 autoUpdater.on("download-progress", (progressObj) => {
-    if(mainWindow) {
+    if (mainWindow) {
         mainWindow.webContents.send('updater:progress', {
             percent: Math.round(progressObj.percent),
             bytesPerSecond: progressObj.bytesPerSecond,
@@ -233,7 +235,7 @@ autoUpdater.on("download-progress", (progressObj) => {
 });
 
 autoUpdater.on("update-downloaded", (info) => {
-    if(mainWindow) {
+    if (mainWindow) {
         mainWindow.setProgressBar(-1);
         mainWindow.webContents.send("updater:downloaded", info);
     }
@@ -245,7 +247,7 @@ ipcMain.on('updater:quit-and-install', () => {
 
 autoUpdater.on('error', (err) => {
     electronLog.error('Auto-updater error:', err);
-    if(mainWindow){
+    if (mainWindow) {
         mainWindow.setProgressBar(-1);
         mainWindow.webContents.send('updater:error', err.message);
     }
@@ -1178,7 +1180,7 @@ function getRandomFileName() {
 async function backupToDrive(): Promise<{ success: boolean, message: string; }> {
     try {
         const token = await getLocalTokenOrRefreshedToken();
-        if(token && token.exist) {
+        if (token && token.exist) {
             const authClient = new google.auth.OAuth2();
             authClient.setCredentials({ access_token: token.accessToken });
             const drive = google.drive({ version: "v3", auth: authClient });
@@ -1187,18 +1189,18 @@ async function backupToDrive(): Promise<{ success: boolean, message: string; }> 
                 dbConnection.closeSync();
                 dbConnection = null;
             }
-            if(dbInstance) {
+            if (dbInstance) {
                 dbInstance.closeSync();
                 dbInstance = null;
             }
             const fileName = getRandomFileName();
             const tempBackupZipPath = path.join(USER_DATA_PATH, "cloud_backup.zip");
             const fileToZip: FileToZip[] = [
-                {fileName: 'vault.db', filePath: VAULT_PATH},
-                {fileName: 'vault.data', filePath: VAULT_DATA_PATH}
+                { fileName: 'vault.db', filePath: VAULT_PATH },
+                { fileName: 'vault.data', filePath: VAULT_DATA_PATH }
             ];
-            if(userSettingsData.includeSettingsInExport) {
-                fileToZip.push({ fileName: 'user_settings.json', filePath: USER_SETTINGS_DATA_PATH})
+            if (userSettingsData.includeSettingsInExport) {
+                fileToZip.push({ fileName: 'user_settings.json', filePath: USER_SETTINGS_DATA_PATH });
             }
             const zipCreateResponse = await createZipFile(fileToZip, tempBackupZipPath);
             if (!zipCreateResponse || !zipCreateResponse.success) {

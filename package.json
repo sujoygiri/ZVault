@@ -32,6 +32,10 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": "build/icon.png",
+        "to": "icon.png"
       }
     ],
     "asar": true,
@@ -47,15 +51,18 @@
       }
     ],
     "win": {
+      "icon": "build/vault-icon.png",
       "target": "nsis"
     },
     "mac": {
+      "icon": "build/vault-icon.png",
       "target": [
         "dmg",
         "zip"
       ]
     },
     "linux": {
+      "icon": "build/vault-icon.png",
       "target": "AppImage"
     }
   },
