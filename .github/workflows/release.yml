@@ -11,7 +11,10 @@ permissions:
 jobs:
   bump-version:
     if: "!contains(github.event.head_commit.message, 'chore(release):')"
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
     outputs:
       new_tag: ${{ steps.bump.outputs.new_tag }}
     steps:
@@ -23,44 +26,39 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Bump version and push tag
         id: bump
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          npm version patch --no-git-tag-version
-          VERSION=$(node -p "require('./package.json').version")
-          git add package.json
-          git commit -m "chore(release): v$VERSION [skip ci]"
-          git tag "v$VERSION"
+          npm version patch -m "chore(release): %s [skip ci]"
           git push origin main --follow-tags
-          echo "new_tag=v$VERSION" >> $GITHUB_OUTPUT
+          echo "new_tag=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
 
   release:
     needs: bump-version
-    runs-on: windows-latest
+    runs-on: windows-latest # Start with windows-latest first to verify the build succeeds
 
     steps:
-      - name: Checkout new release tag with full history
+      - name: Checkout new release tag
         uses: actions/checkout@v4
         with:
           ref: ${{ needs.bump-version.outputs.new_tag }}
-          fetch-depth: 0 # <-- Fixes the git error for electron-builder
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Install Root Dependencies
         run: npm install
 
-      - name: Install Renderer Dependencies
+      - name: Install Renderer (Angular) Dependencies
         run: cd src/renderer/zvault && npm install
 
-      - name: Compile Main (TypeScript) and Renderer (Angular)
+      - name: Build Main (TS) and Renderer (Angular)
         run: npm run build
 
       - name: Package and Publish Release
