@@ -32,9 +32,9 @@ jobs:
         run: cd src/renderer/zvault && npm install
 
       - name: Compile Main and Renderer
-        run: npm run release
+        run: npm run build
 
-      - name: Build and Publish Release
+      - name: Package and Publish Release
         uses: samuelmeuli/action-electron-builder@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
