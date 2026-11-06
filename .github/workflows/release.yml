@@ -1,29 +1,58 @@
-name: Build and Release Electron App
+name: Auto Bump, Build and Release
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
+
+permissions:
+  contents: write
 
 jobs:
+  bump-version:
+    if: "!contains(github.event.head_commit.message, 'chore(release):')"
+    runs-on: ubuntu-latest
+    outputs:
+      new_tag: ${{ steps.bump.outputs.new_tag }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Bump version and push tag
+        id: bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          npm version patch --no-git-tag-version
+          VERSION=$(node -p "require('./package.json').version")
+          git add package.json
+          git commit -m "chore(release): v$VERSION [skip ci]"
+          git tag "v$VERSION"
+          git push origin main --follow-tags
+          echo "new_tag=v$VERSION" >> $GITHUB_OUTPUT
+
   release:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+    needs: bump-version
+    runs-on: windows-latest
 
     steps:
-      - name: Check out Git repository
-        uses: actions/checkout@v3
-
-      - name: Install Node.js
-        uses: actions/setup-node@v3
+      - name: Checkout new release tag with full history
+        uses: actions/checkout@v4
         with:
-          node-version: 24
+          ref: ${{ needs.bump-version.outputs.new_tag }}
+          fetch-depth: 0 # <-- Fixes the git error for electron-builder
 
-      - name: Generate credential.env
-        run: |
-          echo "APP_TOKEN=${{ secrets.APP_TOKEN }}" > credential.env
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
 
       - name: Install Root Dependencies
         run: npm install
@@ -31,7 +60,7 @@ jobs:
       - name: Install Renderer Dependencies
         run: cd src/renderer/zvault && npm install
 
-      - name: Compile Main and Renderer
+      - name: Compile Main (TypeScript) and Renderer (Angular)
         run: npm run build
 
       - name: Package and Publish Release

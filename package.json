@@ -24,6 +24,7 @@
     "files": [
       "dist/**/*",
       "package.json",
+      "assets/**/*",
       "credential.env"
     ],
     "extraResources": [
@@ -35,7 +36,7 @@
         ]
       },
       {
-        "from": "build/icon.png",
+        "from": "assets/icon.png",
         "to": "icon.png"
       },
       {
@@ -56,18 +57,18 @@
       }
     ],
     "win": {
-      "icon": "build/vault-icon.png",
+      "icon": "assets/icon.png",
       "target": "nsis"
     },
     "mac": {
-      "icon": "build/vault-icon.png",
+      "icon": "assets/icon.png",
       "target": [
         "dmg",
         "zip"
       ]
     },
     "linux": {
-      "icon": "build/vault-icon.png",
+      "icon": "assets/icon.png",
       "target": "AppImage"
     }
   },

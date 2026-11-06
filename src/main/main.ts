@@ -110,8 +110,8 @@ autoUpdater.autoInstallOnAppQuit = true;
 
 function getAppIconPath(): string {
     return app.isPackaged
-        ? path.join(process.resourcesPath, 'icon.png')
-        : path.join(__dirname, '../../build/icon.png');
+        ? path.join(process.resourcesPath, "assets", "icon.png")
+        : path.join(__dirname, '../../assets/icon.png');
 }
 
 function createWindow() {
