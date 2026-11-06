@@ -16,6 +16,7 @@ import electronLog from "electron-log";
 import path from "node:path";
 import os from "node:os";
 import fs from "node:fs";
+import { setTimeout } from "node:timers";
 import stream from "node:stream";
 import { Buffer } from "node:buffer";
 import crypto, { Encoding } from "node:crypto";
@@ -31,6 +32,7 @@ import argon2 from "@node-rs/argon2";
 import { drive_v3, google } from "googleapis";
 import yauzl from "yauzl";
 import { ZipFile } from "yazl";
+import dotenv from "dotenv";
 import {
     Categories,
     CloudDrive,
@@ -45,10 +47,10 @@ import {
     UserSettings,
     FileToZip
 } from "../shared/api.types";
-import { setTimeout } from "node:timers";
 
-const rawCredentials: any = fs.readFileSync(path.join(__dirname, "../../credential.env"), "utf8");
-const credential: { APP_TOKEN: string; } = JSON.parse(rawCredentials);
+const envPath = app.isPackaged ? path.join(process.resourcesPath, 'credential.env') : path.join(__dirname, "../../credential.env");
+dotenv.config({path: envPath});
+const APP_TOKEN = process.env.APP_TOKEN || '';
 const SERVER_URL = "https://zvault-oauth-server.onrender.com";
 const USER_DATA_PATH = app.getPath("userData");
 const TOKEN_PATH = path.join(USER_DATA_PATH, 'drive-token.enc');
@@ -908,7 +910,7 @@ async function getNewToken(): Promise<{ success: boolean, accessToken: string | 
     const challenge = crypto.createHash('sha256').update(verifier).digest('base64url');
 
     const res = await net.fetch(`${SERVER_URL}/auth/google/url?code_challenge=${challenge}`, {
-        headers: { 'x-zvault-app-token': credential.APP_TOKEN },
+        headers: { 'x-zvault-app-token': APP_TOKEN },
         credentials: 'include'
     });
 
@@ -929,7 +931,7 @@ async function getNewToken(): Promise<{ success: boolean, accessToken: string | 
             try {
                 const exchangeRes = await net.fetch(`${SERVER_URL}/auth/google/exchange`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'x-zvault-app-token': credential.APP_TOKEN },
+                    headers: { 'Content-Type': 'application/json', 'x-zvault-app-token': APP_TOKEN },
                     body: JSON.stringify({ sessionId, codeVerifier: verifier }),
                     credentials: 'include'
                 });
@@ -967,7 +969,7 @@ async function getLocalTokenOrRefreshedToken(): Promise<{ exist: boolean, access
 
     const res = await net.fetch(`${SERVER_URL}/auth/google/refresh`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-zvault-app-token': credential.APP_TOKEN },
+        headers: { 'Content-Type': 'application/json', 'x-zvault-app-token': APP_TOKEN },
         body: JSON.stringify({ refreshToken: tokens.refresh_token }),
         credentials: 'include'
     });

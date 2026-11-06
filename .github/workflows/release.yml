@@ -3,7 +3,7 @@ name: Build and Release Electron App
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   release:
@@ -21,6 +21,10 @@ jobs:
         with:
           node-version: 24
 
+      - name: Generate credential.env
+        run: |
+          echo "APP_TOKEN=${{ secrets.APP_TOKEN }}" > credential.env
+
       - name: Install Root Dependencies
         run: npm install
 
@@ -28,7 +32,7 @@ jobs:
         run: cd src/renderer/zvault && npm install
 
       - name: Compile Main and Renderer
-        run: npm run build
+        run: npm run release
 
       - name: Build and Publish Release
         uses: samuelmeuli/action-electron-builder@v1
