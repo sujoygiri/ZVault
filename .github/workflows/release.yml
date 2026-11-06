@@ -1,67 +1,36 @@
-name: Auto Bump, Build and Release
+name: Build and Release Electron App
 
 on:
   push:
-    branches:
-      - main
-
-permissions:
-  contents: write
+    tags:
+      - 'v*'
 
 jobs:
-  bump-version:
-    if: "!contains(github.event.head_commit.message, 'chore(release):')"
+  release:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-    outputs:
-      new_tag: ${{ steps.bump.outputs.new_tag }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-
-      - name: Bump version and push tag
-        id: bump
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          npm version patch -m "chore(release): %s [skip ci]"
-          git push origin main --follow-tags
-          echo "new_tag=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
-
-  release:
-    needs: bump-version
-    runs-on: windows-latest # Start with windows-latest first to verify the build succeeds
 
     steps:
-      - name: Checkout new release tag
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.bump-version.outputs.new_tag }}
+      - name: Check out Git repository
+        uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Install Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: 24
 
       - name: Install Root Dependencies
         run: npm install
 
-      - name: Install Renderer (Angular) Dependencies
+      - name: Install Renderer Dependencies
         run: cd src/renderer/zvault && npm install
 
-      - name: Build Main (TS) and Renderer (Angular)
+      - name: Compile Main and Renderer
         run: npm run build
 
-      - name: Package and Publish Release
+      - name: Build and Publish Release
         uses: samuelmeuli/action-electron-builder@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
