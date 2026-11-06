@@ -21,6 +21,10 @@ jobs:
         with:
           node-version: 24
 
+      - name: Generate credential.env
+        run: |
+          echo "APP_TOKEN=${{ secrets.APP_TOKEN }}" > credential.env
+
       - name: Install Root Dependencies
         run: npm install
 
