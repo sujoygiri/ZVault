@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, IpcRendererEvent } from "electron/renderer";
-import { AppActiveState, ApiResponse, Categories, CloudDrive, DataType, NewPassword, NewText, PasswordDetails, ResponsePayload, SortingOrder, TextDetails, RestoreMode } from "../shared/api.types";
+import { AppActiveState, ApiResponse, Categories, CloudDrive, DataType, NewPassword, NewText, PasswordDetails, ResponsePayload, SortingOrder, TextDetails } from "../shared/api.types";
 
 contextBridge.exposeInMainWorld("electronAPI", {
   onSystemThemeChange: (callback: (value: { isDarkMode: boolean; }) => void) => ipcRenderer.on("onSystemThemeChange", (_event: IpcRendererEvent, value: { isDarkMode: boolean; }) => callback(value)),

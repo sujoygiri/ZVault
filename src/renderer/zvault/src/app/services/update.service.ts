@@ -72,20 +72,25 @@ export class UpdateService {
     });
   }
 
-  checkForUpdates() {
+  async checkForUpdates() {
     if (!window.electronAPI) return;
     this.status.set('checking');
     this.errorMessage.set('');
-    window.electronAPI?.checkForUpdates();
+    const updateCheckResponse = await window.electronAPI?.checkForUpdates();
+    if(updateCheckResponse && updateCheckResponse.isUpdateAvailable){
+      this.status.set('available');
+    } else {
+      this.status.set('up-to-date');
+    }
   }
 
-  handlePrimaryButtonClick() {
+  async handlePrimaryButtonClick() {
     if (!window.electronAPI) return;
 
     if (this.status() === 'available' || this.status() === 'error') {
       this.status.set('downloading');
       this.progress.set(2);
-      window.electronAPI?.startDownload();
+      await window.electronAPI?.startDownload();
     } else if (this.status() === 'downloaded') {
       window.electronAPI?.quitAndInstall();
     }

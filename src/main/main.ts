@@ -122,8 +122,8 @@ function createWindow() {
         minHeight: 900,
         icon: getAppIconPath(),
         webPreferences: {
-            preload: path.join(__dirname, "preload.js"), // Optional preload
-            nodeIntegration: false, // Keep false for security
+            preload: path.join(__dirname, "preload.js"),
+            nodeIntegration: false,
             contextIsolation: true,
         },
     });
@@ -215,7 +215,7 @@ ipcMain.handle('updater:check', async () => {
         mainWindow.webContents.send('updater:not-available', { version: app.getVersion() });
         return;
     }
-    await autoUpdater.checkForUpdates();
+    return await autoUpdater.checkForUpdates();
 });
 
 // Return current version from package.json
@@ -224,7 +224,7 @@ ipcMain.handle('updater:get-version', () => {
 });
 
 ipcMain.handle('updater:start-download', async () => {
-    await autoUpdater.downloadUpdate();
+    return await autoUpdater.downloadUpdate();
 });
 
 autoUpdater.on("download-progress", (progressObj) => {

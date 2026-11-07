@@ -1,5 +1,6 @@
 /// <reference types="electron" />
 import { drive_v3 } from "googleapis";
+import { UpdateCheckResult } from "electron-updater";
 
 // main process types
 export type DataType = "password" | "text";
@@ -66,10 +67,10 @@ export interface IElectronAPI {
 
     openUrl: (url: string) => void,
     getAppVersion: () => Promise<any>,
-    checkForUpdates: () => Promise<any>,
+    checkForUpdates: () => Promise<UpdateCheckResult | null>,
     onUpdateAvailable: (cb: (info: { version: string; }) => void) => void,
     onUpdateNotAvailable: (cb: (info: { version: string; }) => void) => void,
-    startDownload: () => Promise<any>,
+    startDownload: () => Promise<Array<String>>,
     onDownloadProgress: (cb: (progress: { percent: number; bytesPerSecond: number; }) => void) => void,
     onUpdateDownloaded: (cb: (info: { version: string; }) => void) => void,
     onError: (cb: (message: string) => void) => void,
