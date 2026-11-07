@@ -1,6 +1,6 @@
 {
   "name": "zvault",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "A Double Encrypted Secure Personal Vault",
   "main": "dist/main/main.js",
   "scripts": {
@@ -36,8 +36,8 @@
         ]
       },
       {
-        "from": "assets/icon.png",
-        "to": "icon.png"
+        "from": "assets/*",
+        "to": "assets/*"
       },
       {
         "from": "credential.env",
@@ -57,11 +57,11 @@
       }
     ],
     "win": {
-      "icon": "assets/icon.png",
+      "icon": "assets/icon.ico",
       "target": "nsis"
     },
     "mac": {
-      "icon": "assets/icon.png",
+      "icon": "assets/icon.icns",
       "target": [
         "dmg",
         "zip"
@@ -73,7 +73,7 @@
     }
   },
   "keywords": [],
-  "author": "",
+  "author": "Sujoy Giri",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {

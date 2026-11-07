@@ -157,6 +157,7 @@ function createWindow() {
             .catch((err) => {
                 console.log(err);
             });
+        mainWindow.setMenu(null);
     } else {
         // In development, load from src folder
         const rendererURL = "http://localhost:4200/";
