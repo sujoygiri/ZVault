@@ -1,6 +1,6 @@
 {
   "name": "zvault",
-  "version": "1.0.9",
+  "version": "1.1.0",
   "description": "A Double Encrypted Secure Personal Vault",
   "main": "dist/main/main.js",
   "scripts": {

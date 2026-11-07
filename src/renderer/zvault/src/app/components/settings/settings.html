@@ -395,7 +395,7 @@
                         </p>
                     </div>
                     <div
-                        class="p-2.5 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                        class="p-2.5 rounded-2xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
                             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round"
@@ -407,7 +407,7 @@
                 <div class="space-y-6">
                     <!-- 1. INDEPENDENT OPTION: Include Settings in Export File -->
                     <div
-                        class="p-5 bg-slate-900/40 dark:bg-slate-900/40 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm flex items-center justify-between gap-4">
+                        class="p-5 bg-white dark:bg-slate-900/40 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm flex items-center justify-between gap-4">
                         <div>
                             <h4
                                 class="text-sm font-bold text-slate-800 dark:text-slate-100">
@@ -425,10 +425,10 @@
             
                     <!-- 2. Encrypted Local Backup Card -->
                     <div
-                        class="p-5 bg-slate-900/40 dark:bg-slate-900/40 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm flex items-center justify-between gap-4 transition hover:border-slate-700">
+                        class="p-5 bg-white dark:bg-slate-900/40 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm flex items-center justify-between gap-4 transition hover:border-slate-300 dark:hover:border-slate-700">
                         <div class="flex items-start gap-4">
                             <div
-                                class="p-3 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20 shrink-0">
+                                class="p-3 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 shrink-0">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6"
                                     viewBox="0 -960 960 960" fill="currentColor">
                                     <path
@@ -449,7 +449,7 @@
                         </div>
             
                         <button type="button" (click)="exportLocalBackup()"
-                            class="shrink-0 flex items-center gap-2 px-4 py-2.5 text-xs font-semibold cursor-pointer text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 rounded-xl transition active:scale-95 shadow-sm">
+                            class="shrink-0 flex items-center gap-2 px-4 py-2.5 text-xs font-semibold cursor-pointer text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 rounded-xl transition active:scale-95 shadow-sm">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4"
                                 viewBox="0 -960 960 960" fill="currentColor">
                                 <path
@@ -461,7 +461,7 @@
             
                     <!-- 3. Cloud Backup Card -->
                     <div
-                        class="p-5 bg-slate-900/40 dark:bg-slate-900/40 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm space-y-5">
+                        class="p-5 bg-white dark:bg-slate-900/40 backdrop-blur-md rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-sm space-y-5">
                         <div>
                             <h4
                                 class="text-sm font-bold text-slate-800 dark:text-slate-100">
@@ -479,7 +479,7 @@
                             @if (settingsService.settings().cloudProvider === 'googleDrive')
                             {
                             <div
-                                class="sm:col-span-3 p-4 bg-slate-950/80 border border-emerald-500/30 rounded-xl flex items-center justify-between">
+                                class="sm:col-span-3 p-4 bg-slate-50 dark:bg-slate-950/80 border border-emerald-500/30 rounded-xl flex items-center justify-between">
                                 <div class="flex items-center gap-3">
                                     <svg class="w-6 h-6 shrink-0" viewBox="0 0 87.3 78.2"
                                         xmlns="http://www.w3.org/2000/svg">
@@ -503,24 +503,27 @@
                                     </svg>
                                     <div>
                                         <div class="flex items-center gap-2">
-                                            <p class="text-xs font-bold text-slate-200">
+                                            <p
+                                                class="text-xs font-bold text-slate-800 dark:text-slate-200">
                                                 Google Drive Connected</p>
                                             <span
-                                                class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                                class="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse"></span>
                                         </div>
-                                        <p class="text-[11px] text-slate-400 mt-0.5">{{
+                                        <p
+                                            class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                            {{
                                             settingsService.settings().cloudAccountEmail ||
                                             'Connected Account' }}</p>
                                     </div>
                                 </div>
                                 <button type="button" (click)="disconnectCloud()"
-                                    class="px-3 py-1.5 text-xs font-semibold cursor-pointer text-rose-400 hover:text-white hover:bg-rose-600/20 border border-rose-500/20 rounded-lg transition">
+                                    class="px-3 py-1.5 text-xs font-semibold cursor-pointer text-rose-600 dark:text-rose-400 hover:text-white hover:bg-rose-600 border border-rose-500/20 rounded-lg transition">
                                     Disconnect
                                 </button>
                             </div>
                             } @else {
                             <button type="button" (click)="connectCloud('googleDrive')"
-                                class="flex items-center justify-start gap-3 p-3.5 bg-slate-950/60 hover:bg-slate-800/60 border border-slate-800 rounded-xl text-xs font-semibold text-slate-200 transition group cursor-pointer shadow-inner">
+                                class="flex items-center justify-start gap-3 p-3.5 bg-slate-50 dark:bg-slate-950/60 hover:bg-slate-100 dark:hover:bg-slate-800/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 transition group cursor-pointer shadow-inner">
                                 <svg class="w-5 h-5 shrink-0" viewBox="0 0 87.3 78.2"
                                     xmlns="http://www.w3.org/2000/svg">
                                     <path d="m6.6 66.85 12.25 21.25h43.75L50.35 66.85z"
@@ -536,17 +539,18 @@
                                 </svg>
                                 <div class="text-left min-w-0">
                                     <p
-                                        class="text-xs font-bold text-slate-200 group-hover:text-cyan-400 transition truncate">
+                                        class="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition truncate">
                                         Google Drive</p>
-                                    <p class="text-[10px] text-cyan-400 font-normal">Connect
-                                        Account</p>
+                                    <p
+                                        class="text-[10px] text-cyan-600 dark:text-cyan-400 font-normal">
+                                        Connect Account</p>
                                 </div>
                             </button>
                             }
             
                             <!-- Microsoft OneDrive (Coming Soon) -->
                             <div
-                                class="flex items-center justify-between p-3.5 bg-slate-950/40 border border-slate-800/60 rounded-xl opacity-60 cursor-not-allowed">
+                                class="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/60 rounded-xl opacity-60 cursor-not-allowed">
                                 <div class="flex items-center gap-3 min-w-0">
                                     <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24"
                                         fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -556,18 +560,20 @@
                                     </svg>
                                     <div class="text-left min-w-0">
                                         <p
-                                            class="text-xs font-bold text-slate-300 truncate">
+                                            class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">
                                             OneDrive</p>
-                                        <p class="text-[10px] text-amber-400 font-medium">
+                                        <p
+                                            class="text-[10px] text-amber-500 dark:text-amber-400 font-medium">
                                             Coming Soon</p>
                                     </div>
                                 </div>
-                                <span class="text-[10px] text-slate-500">🔒</span>
+                                <span
+                                    class="text-[10px] text-slate-400 dark:text-slate-500">🔒</span>
                             </div>
             
                             <!-- Dropbox (Coming Soon) -->
                             <div
-                                class="flex items-center justify-between p-3.5 bg-slate-950/40 border border-slate-800/60 rounded-xl opacity-60 cursor-not-allowed">
+                                class="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/60 rounded-xl opacity-60 cursor-not-allowed">
                                 <div class="flex items-center gap-3 min-w-0">
                                     <svg class="w-5 h-5 shrink-0" viewBox="0 0 43 39"
                                         fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -589,22 +595,26 @@
                                     </svg>
                                     <div class="text-left min-w-0">
                                         <p
-                                            class="text-xs font-bold text-slate-300 truncate">
+                                            class="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">
                                             Dropbox</p>
-                                        <p class="text-[10px] text-amber-400 font-medium">
+                                        <p
+                                            class="text-[10px] text-amber-500 dark:text-amber-400 font-medium">
                                             Coming Soon</p>
                                     </div>
                                 </div>
-                                <span class="text-[10px] text-slate-500">🔒</span>
+                                <span
+                                    class="text-[10px] text-slate-400 dark:text-slate-500">🔒</span>
                             </div>
                         </div>
             
                         <!-- Cloud Automated Backup Settings, Retention, & Manual Trigger -->
-                        <div class="space-y-4 pt-4 border-t border-slate-800/80">
+                        <div
+                            class="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800/80">
                             <!-- Max Cloud Backups Retention Selection -->
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <label class="text-xs font-semibold text-slate-300">
+                                    <label
+                                        class="text-xs font-semibold text-slate-700 dark:text-slate-300">
                                         Max Cloud Backups Retention
                                     </label>
                                     <p
@@ -613,11 +623,11 @@
                                         in the cloud.
                                     </p>
                                 </div>
-                                <select
-                                    #maxBackupCountDropdown
+                                <select #maxBackupCountDropdown
                                     (change)="handleSettingsUpdate('maxCloudBackups', $any(+maxBackupCountDropdown.value))"
-                                    class="bg-slate-950/80 border border-slate-700/60 rounded-xl px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 cursor-pointer">
-                                    <option [defaultSelected]="true" [value]="3">3 Backups</option>
+                                    class="bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-slate-700/60 rounded-xl px-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-cyan-500 cursor-pointer">
+                                    <option [defaultSelected]="true" [value]="3">3 Backups
+                                    </option>
                                     <option [value]="5">5 Backups</option>
                                     <option [value]="10">10 Backups</option>
                                 </select>
@@ -626,7 +636,8 @@
                             <!-- Automated Background Backups Toggle -->
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <label class="text-xs font-semibold text-slate-300">
+                                    <label
+                                        class="text-xs font-semibold text-slate-700 dark:text-slate-300">
                                         Automated Background Backups
                                     </label>
                                     <p
@@ -643,12 +654,12 @@
                             @if (settingsService.settings().autoBackupEnabled) {
                             <div class="pl-2">
                                 <label
-                                    class="block text-xs font-semibold text-slate-300 mb-1.5">
+                                    class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                                     Backup Frequency Schedule
                                 </label>
                                 <select
                                     [(ngModel)]="settingsService.settings().autoBackupInterval"
-                                    class="w-full bg-slate-950/80 border border-slate-700/60 rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 cursor-pointer">
+                                    class="w-full bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-slate-700/60 rounded-xl px-4 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-cyan-500 cursor-pointer">
                                     <option value="daily">Daily Snapshot</option>
                                     <option value="weekly">Weekly Snapshot</option>
                                     <option value="monthly">Monthly Snapshot</option>
@@ -660,7 +671,7 @@
                             <div class="pt-2 flex justify-end">
                                 <button type="button" (click)="triggerManualCloudBackup()"
                                     [disabled]="settingsService.settings().cloudProvider === 'none'"
-                                    class="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold cursor-pointer text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 disabled:opacity-40 disabled:cursor-not-allowed border border-cyan-500/30 rounded-xl transition active:scale-95 shadow-sm">
+                                    class="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold cursor-pointer text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 disabled:opacity-40 disabled:cursor-not-allowed border border-cyan-500/30 rounded-xl transition active:scale-95 shadow-sm">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4"
                                         fill="none" viewBox="0 0 24 24"
                                         stroke="currentColor" stroke-width="2">

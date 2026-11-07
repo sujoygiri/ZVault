@@ -15,8 +15,15 @@ export class ToolTip {
   backgroundClass = input<
     | 'bg-slate-900'
     | 'bg-blue-600'
+    | 'bg-blue-700'
+    | 'bg-blue-800'
+    | 'bg-blue-900'
     | 'bg-green-600'
+    | 'bg-green-700'
+    | 'bg-green-800'
+    | 'bg-green-900'
     | 'bg-red-600'
+    | 'bg-red-900'
     | 'bg-amber-500'
   >('bg-slate-900');
 
